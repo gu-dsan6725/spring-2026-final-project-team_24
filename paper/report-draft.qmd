@@ -55,7 +55,7 @@ This paper describes **what is implemented and runnable** in the accompanying re
 
 ## Comparable LLM item-generation systems
 
-Three lines of recent work share architectural ideas with ours; the contrasts below motivate both our contribution and the benchmark feasibility analysis in Section 4.
+Three lines of recent work share architectural ideas with ours; the contrasts below motivate our contribution and frame what a future head-to-head benchmark would have to measure.
 
 **Multi-agent IG pipelines.** **EduAgentQG** [@eduagentqg2025] proposes a five-agent workflow — *Planner / Writer / Solver / Educator / Checker* — with iterative feedback for personalized question generation; **ReQUESTA** [@requesta2026] is a hybrid multi-agent + rule-based MCQ generator with a Bloom-aware "agreement filter" and a GPT-5 zero-shot baseline; the EDM 2025 *Multi-Agent Collaborative Framework for Math Problem Generation* [@mathagent2025] aligns generation to Bloom skill levels through specialised solver and reviewer agents; and the *Modular Multi-Agentic Architecture for Automating Item Generation* [@modulariag2026] formalises topic-selection / item-formation / review as separable services. Our pipeline (Feasibility $\to$ Generator $\to$ Actors $\to$ Reflector $\pm$ hardening, with a multimodal Sample Evaluator and a per-concept Answer Evaluator) is closest in spirit to EduAgentQG's *Writer + Solver + Checker* triad, but we add (i) a **multimodal pre-pass** that pre-grades a learner-supplied reference image or markdown into `analysis_notes` threaded into the Generator, (ii) an explicit **iterative hardening** loop targeted at the high-difficulty tail, and (iii) **per-concept verdicts** rather than item-level approval as the post-answer signal.
 
