@@ -1,0 +1,48 @@
+---
+description: Pydantic schema conventions for request/response models
+globs: "app/schemas/**/*.py"
+alwaysApply: false
+---
+
+# Pydantic Schema Conventions
+
+## File Organization
+
+```
+app/schemas/
+  entity.py        # EntityCreate, EntityUpdate, EntityResponse
+  edge.py          # EdgeCreate, EdgeResponse
+  item.py          # ItemCreate, ItemResponse
+  group.py         # GroupCreate, GroupResponse, GroupConfig
+  data_entity.py   # DataEntityCreate, SourceInfo, EntryAppend, DataEntityRead
+  user.py          # UserCreate, UserResponse, TokenPayload
+```
+
+## Naming Pattern
+
+- `{Model}Create` — POST request body
+- `{Model}Update` — PUT/PATCH request body (all fields optional)
+- `{Model}Response` — API response shape
+
+```python
+class EntityCreate(BaseModel):
+    content_type: Literal["markdown", "video", "audio"]
+    title: str = Field(min_length=1, max_length=255)
+    body: str | None = None
+    url: HttpUrl | None = None
+
+class EntityResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    content_type: str
+    title: str
+    created_by: str
+    created_at: datetime
+```
+
+## Validation
+
+- Use `Field()` constraints (`min_length`, `ge`, `le`, `pattern`) over custom validators where possible.
+- Custom validators use `@field_validator` — never `@root_validator` (use `@model_validator` in v2).
+- All response models set `model_config = ConfigDict(from_attributes=True)` for ORM compatibility.

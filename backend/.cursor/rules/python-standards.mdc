@@ -1,0 +1,45 @@
+---
+description: Python coding standards — typing, structure, error handling
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# Python Standards
+
+## Typing
+
+- Use type hints on all function signatures (params and return).
+- Use `from __future__ import annotations` at the top of every module.
+- Prefer `str | None` over `Optional[str]`.
+
+```python
+# good
+def get_entity(entity_id: str, include_edges: bool = False) -> Entity | None:
+    ...
+
+# bad — missing types
+def get_entity(entity_id, include_edges=False):
+    ...
+```
+
+## Imports
+
+- Group: stdlib, third-party, local — separated by blank lines.
+- Use absolute imports from the package root (e.g., `from app.services.entity import EntityService`).
+
+## Error Handling
+
+- Never bare `except:`. Always catch specific exceptions.
+- Raise domain-specific exceptions (defined in `app/exceptions.py`), not generic `ValueError`/`RuntimeError`.
+- Log errors with structured context before re-raising.
+
+## Async
+
+- Use `async def` for any I/O-bound function (DB, HTTP, file).
+- Never call blocking I/O inside an async function without `run_in_executor`.
+
+## Testing
+
+- Test files mirror source layout: `tests/services/test_entity.py` for `app/services/entity.py`.
+- Use `pytest` with `pytest-asyncio` for async tests.
+- Fixture-based setup — no test-level DB seeding in the test body.

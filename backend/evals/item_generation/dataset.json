@@ -1,0 +1,60 @@
+[
+  {
+    "id": "cs_variables_easy",
+    "category": "single_concept",
+    "description": "One short CS concept; expect a concrete practice problem grounded in the note.",
+    "expected_output": "The response should be an educational problem or exercise about variables and assignment in Python. It must stay grounded in beginner CS (no unrelated topics). Any stated code behavior should be plausible for Python 3.",
+    "request": {
+      "concepts": [
+        {
+          "id": "c_py_vars",
+          "title": "Variables and assignment in Python",
+          "body_md": "A variable is a name that refers to a value. Assignment uses `=` to bind a name to an object, e.g. `x = 1`. Reassigning `x = 2` makes the name refer to a new int object.",
+          "content_type": "markdown",
+          "user_mastery": 0.4,
+          "connected_concepts": []
+        }
+      ],
+      "edges": [],
+      "example_items": [],
+      "context_images": [],
+      "requested_type": "problem",
+      "difficulty_preference": "easy",
+      "user_requirements": "Ask for one short trace-the-value style question only. CRITICAL for the generated item JSON: foundation_concept_ids must list ONLY the exact input concept id strings from this request — for this case use exactly [\"c_py_vars\"] and no other strings (no titles, no synonyms, no subtopic names like variables or assignment).",
+      "items_per_round": 1
+    }
+  },
+  {
+    "id": "stats_mean_median",
+    "category": "definitions",
+    "description": "Two related stats concepts; problem may combine both.",
+    "expected_output": "The response should assess understanding of mean and median using the definitions given (central tendency, sensitivity to outliers). Wording may vary but must not contradict standard definitions.",
+    "request": {
+      "concepts": [
+        {
+          "id": "c_mean",
+          "title": "Arithmetic mean",
+          "body_md": "The mean is the sum of observations divided by the count. It uses every data point and is sensitive to extreme values.",
+          "content_type": "markdown",
+          "user_mastery": 0.5,
+          "connected_concepts": ["Median"]
+        },
+        {
+          "id": "c_median",
+          "title": "Median",
+          "body_md": "The median is the middle value of a sorted dataset (or average of two middle values). It is more robust to outliers than the mean.",
+          "content_type": "markdown",
+          "user_mastery": 0.5,
+          "connected_concepts": ["Arithmetic mean"]
+        }
+      ],
+      "edges": [],
+      "example_items": [],
+      "context_images": [],
+      "requested_type": "problem",
+      "difficulty_preference": "easy",
+      "user_requirements": "One comparison question: when mean and median differ, what might that suggest about the data? CRITICAL for the generated item JSON: foundation_concept_ids must contain ONLY these exact ids from the input: \"c_mean\" and/or \"c_median\" — never use concept titles (e.g. not \"Arithmetic mean\" or \"Median\" as ids).",
+      "items_per_round": 1
+    }
+  }
+]

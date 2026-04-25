@@ -1,0 +1,70 @@
+---
+description: Obsidian plugin development conventions — TypeScript thin client calling our FastAPI backend
+globs: plugin/**
+---
+
+# Obsidian Plugin Development
+
+The `plugin/` directory contains a TypeScript Obsidian plugin that acts as a thin client to our Python FastAPI backend.
+
+## Architecture
+
+- Obsidian plugin is a **UI layer only** — all logic lives in the Python backend
+- Plugin communicates via `requestUrl()` (Obsidian's built-in HTTP client, handles CORS)
+- Every view fetches data from `/api/v1/*` endpoints and renders it
+- Plugin never duplicates backend logic — if it needs data, it calls the API
+
+## Language & Build
+
+- **TypeScript** (strict mode) — Obsidian plugins must be TS/JS
+- **esbuild** for bundling → produces `main.js`
+- Target: `es2018`, module: `CommonJS`
+- Dependencies: `obsidian` (API types), `cytoscape` (graph rendering)
+- Run `npm run dev` in `plugin/` for watch mode
+
+## File Conventions
+
+```
+plugin/src/
+  main.ts              # Plugin entry — extends Plugin, registers views + commands
+  settings.ts          # PluginSettingTab — backend URL, auth token, user/group ID
+  api.ts               # BackendAPI class — typed wrappers around requestUrl()
+  views/               # Custom ItemView subclasses (one per panel)
+  commands/             # Command handlers (publish, sync)
+  types.ts             # Shared TypeScript interfaces matching backend Pydantic schemas
+```
+
+## Coding Standards
+
+- Use `requestUrl` from the `obsidian` module for all HTTP calls — never use `fetch` directly (CORS issues on desktop)
+- Always `async/await` for API calls — never block the UI
+- Clean up resources in `onClose()` for every `ItemView`
+- Store settings in `this.app.vault` via `loadData()`/`saveData()`
+- Use arrow functions or `.bind(this)` in callbacks to preserve context
+- Cytoscape.js instances must be destroyed in `onClose()` to prevent memory leaks
+
+## API Client Pattern
+
+```typescript
+// All backend calls go through api.ts
+const api = new BackendAPI(settings.backendUrl, settings.authToken);
+const concepts = await api.getConcepts();
+```
+
+## Views
+
+Each custom panel extends `ItemView` and has a unique `VIEW_TYPE_*` constant. Register in `main.ts` via `this.registerView()`.
+
+## Privacy Model
+
+The plugin supports three publish modes for notes:
+1. **Save** (default) — stays in vault only (private)
+2. **Index** — embed + index in user's private Pinecone namespace (group can search by count, not content)
+3. **Share** — push to group landscape (visible to members, triggers merge pipeline)
+
+## Community Plugin Complements
+
+These community plugins work alongside ours (don't reimplement their features):
+- **obsidian-spaced-repetition** — local flashcard review
+- **Relay** — real-time collaborative editing with CRDT
+- **Extended Graph** — enhanced vault-link graph view

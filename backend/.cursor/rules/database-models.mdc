@@ -1,0 +1,47 @@
+---
+description: Database model and query conventions — MongoDB, PostgreSQL, Pinecone, S3
+globs: "app/models/**/*.py,app/db/**/*.py"
+alwaysApply: false
+---
+
+# Database & Model Conventions
+
+## Multi-Store Architecture
+
+This project uses four stores (see `plan.md` Section 10):
+
+- **MongoDB** — document store for concepts, edges, canonical landscape nodes, ACE playbooks
+- **PostgreSQL** — relational data (users, groups, permissions, knowledge states, scheduling)
+- **Pinecone** — vector search (merge detection, edge dedup, foreign content resolution)
+- **S3 / MinIO** — media file uploads (audio, images, handwritten submissions)
+
+Keep store-specific logic in dedicated repository modules under `app/db/`.
+
+## MongoDB Documents
+
+- Use `motor` (async MongoDB driver) for all MongoDB access.
+- Collection names: lowercase, plural (`concepts`, `edges`, `canonical_nodes`, `playbooks`).
+- Always use delta updates (`$push`, `$set`, `$addToSet`, `$pull`) — never replace entire documents.
+
+```python
+await db.canonical_nodes.update_one(
+    {"canonical_id": canonical_id},
+    {"$push": {"perspectives": new_perspective},
+     "$addToSet": {"edges_out": new_edge_target},
+     "$set": {"last_updated": datetime.utcnow()}}
+)
+```
+
+## PostgreSQL (SQLAlchemy)
+
+- Use SQLAlchemy 2.0 style with `Mapped` type annotations.
+- All models inherit from a shared `Base` in `app/db/base.py`.
+- Table names: lowercase, plural, snake_case (`users`, `groups`, `group_members`).
+- Use Alembic for migrations. Never modify tables manually.
+- Async sessions via `async_sessionmaker`.
+
+## Pinecone
+
+- Use scoped namespaces: `group_{id}_landscape`, `group_{id}_edges`, `user_{id}_concepts`, `user_{id}_edges`.
+- Every write to MongoDB emits an event that triggers a Pinecone search.
+- All DB access goes through a service or repository layer — never query from route handlers.

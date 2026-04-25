@@ -1,0 +1,765 @@
+/* Knowledge Graph Plugin — Item Generator Styles */
+
+.kg-item-generator {
+	padding: 16px;
+	max-width: 800px;
+}
+
+.kg-section {
+	margin-bottom: 20px;
+}
+
+.kg-section h3 {
+	margin-bottom: 8px;
+	font-size: 1em;
+	opacity: 0.8;
+}
+
+/* --- Fields --- */
+
+.kg-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin-bottom: 12px;
+}
+
+.kg-field label {
+	font-size: 0.85em;
+	font-weight: 600;
+	opacity: 0.7;
+}
+
+.kg-input,
+.kg-select,
+.kg-textarea {
+	width: 100%;
+	padding: 6px 8px;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-primary);
+	color: var(--text-normal);
+	font-family: inherit;
+	font-size: 0.9em;
+}
+
+.kg-input-wide {
+	flex: 2;
+}
+
+.kg-input-narrow {
+	width: 70px;
+	flex: none;
+}
+
+.kg-textarea {
+	resize: vertical;
+	min-height: 60px;
+}
+
+/* --- Concept / Edge rows --- */
+
+.kg-concept-row,
+.kg-edge-row {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	margin-bottom: 6px;
+}
+
+.kg-concept-summary {
+	margin: 6px 0 4px;
+}
+
+.kg-concept-row-compact {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 4px 8px;
+	border-radius: 4px;
+	background: var(--background-secondary);
+	margin-bottom: 3px;
+}
+
+.kg-concept-row-compact:hover {
+	background: var(--background-modifier-hover);
+}
+
+.kg-concept-title {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.92em;
+}
+
+.kg-concept-meta {
+	font-size: 0.75em;
+	opacity: 0.55;
+	flex-shrink: 0;
+}
+
+/* --- Source list (one row per uploaded file / folder / pdf) --- */
+
+.kg-source-list {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	margin: 6px 0 10px;
+}
+
+.kg-source-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 6px 10px;
+	border-radius: 4px;
+	background: var(--background-secondary);
+}
+
+.kg-source-row:hover {
+	background: var(--background-modifier-hover);
+}
+
+.kg-source-icon {
+	font-size: 1em;
+	flex-shrink: 0;
+}
+
+.kg-source-label {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 0.92em;
+}
+
+.kg-source-meta {
+	font-size: 0.75em;
+	opacity: 0.55;
+	flex-shrink: 0;
+}
+
+.kg-concept-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 8px;
+	margin-bottom: 8px;
+}
+
+.kg-concept-body-toggle {
+	margin-top: 4px;
+}
+
+.kg-concept-body-toggle summary {
+	cursor: pointer;
+	font-size: 0.8em;
+	opacity: 0.6;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.kg-connected-tags {
+	font-size: 0.75em;
+	opacity: 0.5;
+	margin-top: 4px;
+}
+
+.kg-arrow {
+	opacity: 0.5;
+	font-size: 1.2em;
+}
+
+.kg-btn-remove {
+	background: none;
+	border: none;
+	color: var(--text-error);
+	cursor: pointer;
+	font-size: 1.2em;
+	padding: 2px 6px;
+	border-radius: 4px;
+}
+
+.kg-btn-remove:hover {
+	background: var(--background-modifier-error);
+}
+
+/* --- Search bar --- */
+
+.kg-search-row {
+	display: flex;
+	gap: 6px;
+	align-items: stretch;
+	margin-bottom: 8px;
+}
+
+.kg-search-row .kg-search-wrap {
+	flex: 1;
+	margin-bottom: 0;
+}
+
+.kg-search-add-btn {
+	flex: 0 0 auto;
+	min-width: 36px;
+	padding: 0 10px;
+	font-size: 1.1em;
+	font-weight: 600;
+	line-height: 1;
+}
+
+.kg-search-wrap {
+	position: relative;
+	margin-bottom: 8px;
+}
+
+.kg-search-input {
+	width: 100%;
+	padding: 8px 12px;
+	font-size: 0.95em;
+}
+
+.kg-search-dropdown {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	z-index: 100;
+	background: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-top: none;
+	border-radius: 0 0 6px 6px;
+	max-height: 200px;
+	overflow-y: auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.kg-search-item {
+	padding: 8px 12px;
+	cursor: pointer;
+	font-size: 0.9em;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.kg-search-item:hover {
+	background: var(--background-modifier-hover);
+}
+
+.kg-search-item-added {
+	opacity: 0.5;
+}
+
+.kg-search-check {
+	font-size: 0.8em;
+	opacity: 0.6;
+}
+
+/* --- Import row --- */
+
+.kg-import-row {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 12px;
+	flex-wrap: wrap;
+}
+
+/* --- Buttons --- */
+
+.kg-btn {
+	padding: 8px 16px;
+	border-radius: 6px;
+	border: none;
+	cursor: pointer;
+	font-size: 0.9em;
+	font-weight: 500;
+}
+
+.kg-btn-primary {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+
+.kg-btn-primary:hover {
+	opacity: 0.9;
+}
+
+.kg-btn-primary:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.kg-btn-secondary {
+	background: var(--background-modifier-border);
+	color: var(--text-normal);
+}
+
+.kg-btn-secondary:hover {
+	background: var(--background-modifier-hover);
+}
+
+.kg-btn-cancel {
+	background: var(--background-modifier-error);
+	color: var(--text-on-accent);
+}
+
+.kg-btn-cancel:hover {
+	opacity: 0.85;
+}
+
+.kg-btn-accent {
+	background: var(--text-accent);
+	color: var(--text-on-accent);
+}
+
+.kg-btn-accent:hover {
+	opacity: 0.9;
+}
+
+.kg-btn-accent:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.kg-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 16px;
+	flex-wrap: wrap;
+}
+
+.kg-actions-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 16px;
+}
+
+.kg-btn-full {
+	width: 100%;
+}
+
+.kg-hint {
+	font-size: 0.8em;
+	opacity: 0.5;
+	font-style: italic;
+	padding: 4px 0;
+}
+
+.kg-semantic-results {
+	margin-top: 8px;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	padding: 8px;
+	max-height: 220px;
+	overflow-y: auto;
+}
+
+.kg-semantic-hit {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 6px 4px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.kg-semantic-hit:last-child {
+	border-bottom: none;
+}
+
+.kg-semantic-hit-title {
+	font-size: 0.85em;
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.kg-btn-tiny {
+	font-size: 0.75em;
+	padding: 2px 8px;
+	flex: none;
+}
+
+/* --- Session meta --- */
+
+.kg-session-meta {
+	display: flex;
+	gap: 12px;
+	font-size: 0.85em;
+	opacity: 0.7;
+	margin-bottom: 16px;
+}
+
+/* --- Notices --- */
+
+.kg-notice {
+	padding: 12px 16px;
+	border-radius: 6px;
+	margin: 12px 0;
+	font-size: 0.9em;
+}
+
+.kg-notice-warn {
+	background: var(--background-modifier-error);
+	opacity: 0.9;
+}
+
+.kg-notice-success {
+	background: var(--background-modifier-success);
+}
+
+/* --- Round --- */
+
+.kg-round {
+	margin-bottom: 24px;
+	padding-bottom: 16px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* --- Item card --- */
+
+.kg-item-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 16px;
+	margin-bottom: 12px;
+}
+
+.kg-item-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+}
+
+.kg-badges {
+	display: flex;
+	gap: 4px;
+}
+
+.kg-badge {
+	font-size: 0.75em;
+	padding: 2px 8px;
+	border-radius: 12px;
+	background: var(--background-modifier-border);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.kg-badge-easy {
+	background: var(--background-modifier-success);
+}
+
+.kg-badge-hard {
+	background: var(--background-modifier-error);
+}
+
+.kg-item-body {
+	margin-bottom: 8px;
+}
+
+/* --- Collapsible sections --- */
+
+.kg-collapsible {
+	margin-top: 8px;
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 8px;
+}
+
+.kg-collapsible summary {
+	cursor: pointer;
+	font-size: 0.85em;
+	font-weight: 600;
+	opacity: 0.7;
+}
+
+.kg-collapsible summary:hover {
+	opacity: 1;
+}
+
+/* --- Grader --- */
+
+.kg-grader {
+	margin-top: 16px;
+	padding: 12px;
+	border-radius: 6px;
+	background: var(--background-secondary);
+}
+
+.kg-grader h4 {
+	margin-top: 0;
+	margin-bottom: 8px;
+}
+
+.kg-recommendation {
+	font-style: italic;
+	opacity: 0.8;
+}
+
+.kg-mastery-delta {
+	margin-top: 8px;
+	font-size: 0.85em;
+}
+
+.kg-concepts-used {
+	font-size: 0.85em;
+	opacity: 0.7;
+	margin-top: 4px;
+}
+
+.kg-actor,
+.kg-feedback {
+	font-size: 0.9em;
+}
+
+/* --- Image thumbnails --- */
+
+.kg-image-thumb {
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 4px;
+	border: 1px solid var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+/* --- Doc-chunk search suggestion rows --- */
+
+.kg-docchunk-title {
+	font-weight: 600;
+	color: var(--text-normal);
+}
+
+.kg-docchunk-sub {
+	font-size: 0.78em;
+	opacity: 0.65;
+	margin-top: 2px;
+}
+
+.kg-docchunk-preview {
+	font-size: 0.85em;
+	color: var(--text-muted);
+	margin-top: 4px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* --- Coverage matrix (depth-aware schedule view) --- */
+
+.kg-coverage-section {
+	border-top: 1px solid var(--background-modifier-border);
+	padding-top: 16px;
+}
+
+.kg-coverage-controls {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.kg-coverage-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.kg-coverage-row label {
+	min-width: 120px;
+	font-size: 0.85em;
+	opacity: 0.8;
+}
+
+.kg-focus-slider {
+	flex: 1;
+}
+
+/* --- Flat coverage bar ---
+ * One fixed-width bar. Each concept is a slot; more concepts → denser
+ * slots (flex: 1 per cell with min-width:0 so total width stays
+ * constant). Depth ordering is preserved left→right, but depth layers
+ * are NOT separated by gaps — they're marked with a thin tick on the
+ * first cell of each new layer. The focus_depth boundary is a thicker
+ * accent tick on the first cell that crosses it.
+ */
+.kg-coverage-bar {
+	display: flex;
+	flex-direction: row;
+	width: 100%;
+	height: 22px;
+	gap: 2px;
+	margin-top: 6px;
+	background: transparent;
+}
+
+.kg-coverage-cell {
+	flex: 1 1 0;
+	min-width: 2px;
+	height: 100%;
+	position: relative;
+	border-radius: 2px;
+	background: var(--background-modifier-border);
+	transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.kg-coverage-cell-out {
+	outline: 1px dashed var(--background-modifier-border);
+	outline-offset: -1px;
+}
+
+/* Thin depth-boundary tick on the left edge of the first cell in each
+ * new layer. Subtle — just enough to let the eye segment the bar. */
+.kg-coverage-cell-depth-tick {
+	box-shadow: inset 2px 0 0 var(--background-modifier-border);
+}
+
+/* Focus-depth boundary: accent-colored so the user can see the
+ * in-scope / out-of-scope split at a glance. Overrides the thinner
+ * depth tick on the same cell. */
+.kg-coverage-cell-focus-tick {
+	box-shadow: inset 3px 0 0 var(--text-accent) !important;
+}
+
+/* Mastered cells (rolling avg score ≥ MASTERY_THRESHOLD): the LLM is
+ * being told to combine rather than drill these, so they get a thin
+ * inset ring and a ✓ glyph. Color stays the dominant-difficulty fill. */
+.kg-coverage-cell-mastered {
+	box-shadow: inset 0 0 0 2px var(--text-on-accent, #fff);
+}
+.kg-coverage-cell-mastered.kg-coverage-cell-depth-tick {
+	box-shadow: inset 2px 0 0 var(--background-modifier-border),
+		inset 0 0 0 2px var(--text-on-accent, #fff);
+}
+.kg-coverage-cell-mastered.kg-coverage-cell-focus-tick {
+	box-shadow: inset 3px 0 0 var(--text-accent),
+		inset 0 0 0 2px var(--text-on-accent, #fff) !important;
+}
+.kg-coverage-cell-check {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.7em;
+	color: var(--text-on-accent, #fff);
+	font-weight: 700;
+	pointer-events: none;
+	line-height: 1;
+}
+
+.kg-coverage-annotation {
+	margin-top: 4px;
+	font-size: 0.75em;
+	opacity: 0.7;
+	font-family: var(--font-monospace);
+}
+
+.kg-coverage-legend {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+	margin-top: 8px;
+	font-size: 0.75em;
+	opacity: 0.85;
+}
+
+.kg-coverage-swatch {
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	border-radius: 2px;
+	margin-right: 4px;
+	vertical-align: middle;
+}
+
+.kg-coverage-swatch-label {
+	margin-right: 8px;
+}
+
+/* --- Sample item analysis card (injected under each sample once the
+       sample-item analyzer returns) --- */
+
+.kg-sample-analysis {
+	margin-top: 6px;
+	padding: 8px 10px;
+	border-left: 3px solid var(--interactive-accent);
+	background: var(--background-secondary);
+	border-radius: 4px;
+	font-size: 0.85em;
+	line-height: 1.4;
+}
+
+.kg-sample-analysis-summary {
+	font-weight: 600;
+	margin-bottom: 4px;
+}
+
+.kg-sample-analysis-meta {
+	opacity: 0.75;
+	font-size: 0.9em;
+	margin-bottom: 6px;
+}
+
+.kg-sample-analysis-notes {
+	margin-bottom: 6px;
+}
+
+.kg-sample-analysis-missing {
+	font-size: 0.9em;
+	opacity: 0.85;
+	margin-bottom: 4px;
+}
+
+.kg-sample-analysis-issues {
+	font-size: 0.9em;
+	color: var(--text-warning, var(--text-error));
+}
+
+.kg-badge-pending {
+	background: var(--background-modifier-border);
+	opacity: 0.8;
+	animation: kg-pulse 1.4s ease-in-out infinite;
+}
+
+.kg-badge-warn {
+	background: var(--background-modifier-error);
+	color: var(--text-on-accent);
+}
+
+.kg-badge-clickable {
+	cursor: pointer;
+	border: none;
+	font-family: inherit;
+	text-transform: uppercase;
+}
+.kg-badge-clickable:hover {
+	filter: brightness(1.1);
+}
+
+.kg-sample-analysis-error {
+	border-left-color: var(--text-error);
+}
+
+.kg-sample-thumb {
+	width: 40px;
+	height: 40px;
+	object-fit: cover;
+	border-radius: 4px;
+	margin-right: 8px;
+	border: 1px solid var(--background-modifier-border);
+	flex-shrink: 0;
+}
+
+.kg-badge-ok {
+	background: var(--background-modifier-success);
+}
+
+@keyframes kg-pulse {
+	0%, 100% { opacity: 0.5; }
+	50% { opacity: 1; }
+}
+

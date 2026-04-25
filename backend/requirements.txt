@@ -1,0 +1,57 @@
+# Core
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-multipart
+
+# Auth
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt
+
+# Database — PostgreSQL
+sqlalchemy[asyncio]
+asyncpg
+alembic
+
+# Database — MongoDB
+motor
+pymongo
+
+# Vector store (package renamed from pinecone-client)
+pinecone>=5.0,<8
+
+# Object storage
+boto3
+
+# AI providers
+openai
+anthropic
+groq
+mistralai
+cohere
+
+# Embeddings & NLP
+tiktoken
+numpy
+
+# Document processing — MinerU is the primary extractor (PDF, images, DOCX)
+mineru[pipeline]
+python-docx
+beautifulsoup4
+markdown
+
+# Event bus (lightweight — swap for Kafka/RabbitMQ later)
+aio-pika
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+
+# Observability
+prometheus-fastapi-instrumentator
+
+# Dev
+python-dotenv

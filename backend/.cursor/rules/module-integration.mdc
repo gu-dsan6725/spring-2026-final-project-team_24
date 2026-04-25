@@ -1,0 +1,37 @@
+---
+description: Vendor-based module integration workflow — how to discover, copy, and refactor external code into the backend
+alwaysApply: true
+---
+
+# Module Integration
+
+## Vendor Folder
+
+`vendor/` contains git-cloned repos — team branches or third-party repos. Each subfolder is a standalone repo. This folder is `.gitignore`d; each team member clones what they need locally.
+
+```
+vendor/
+  teammate-auth-service/    # cloned from a team branch
+  ace-agent-ace/            # cloned from github.com/ace-agent/ace
+  some-embedding-lib/       # cloned from a third-party repo
+```
+
+## Integration Workflow
+
+When a component is needed:
+
+1. **Search `vendor/` first** for matching code from team branches or external repos.
+2. **Copy** relevant source files into the appropriate `app/` location (`app/services/`, `app/ai/providers/`, `app/mcp/`, etc.).
+3. **Refactor** the copied code:
+   - Rename files/classes to match project conventions (snake_case files, PascalCase classes).
+   - Rewrite imports to use absolute imports from `app.*`.
+   - Adapt interfaces to match existing service/repository patterns.
+4. **Channel variables** — wire configuration (env vars, dependency injection via FastAPI `Depends()`) into the existing service layer. Never hardcode config from the vendor source.
+5. **Update dependencies** — remove vendor-specific packages not in the project; add genuinely new ones to `requirements.txt`.
+
+## Rules
+
+- **Never import directly from `vendor/`** — always copy into `app/` and refactor.
+- After integration, the code in `app/` must work independently of `vendor/`.
+- Attribute the source in a code comment at the top of the integrated file: `# Adapted from: <repo-url>`.
+- If the vendor code has its own tests, adapt and move them into `tests/` following the project test layout.

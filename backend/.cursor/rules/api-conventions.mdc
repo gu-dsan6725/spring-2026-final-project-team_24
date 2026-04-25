@@ -1,0 +1,52 @@
+---
+description: FastAPI route and endpoint conventions
+globs: "app/api/**/*.py"
+alwaysApply: false
+---
+
+# API Conventions
+
+## Route Structure
+
+```
+app/api/
+  v1/
+    concepts.py      # /api/v1/concepts
+    edges.py         # /api/v1/edges
+    items.py         # /api/v1/items
+    groups.py        # /api/v1/groups
+    data_entities.py # /api/v1/data-entities
+    traversal.py     # /api/v1/traversal
+    ai_services.py   # /api/v1/ai
+```
+
+## Endpoint Rules
+
+- All routes versioned under `/api/v1/`.
+- Use plural nouns for resource paths (`/entities`, not `/entity`).
+- Return Pydantic response models — never return raw dicts.
+- Use dependency injection for services, DB sessions, and auth:
+
+```python
+@router.get("/{entity_id}", response_model=EntityResponse)
+async def get_entity(
+    entity_id: str,
+    service: EntityService = Depends(get_entity_service),
+    current_user: User = Depends(get_current_user),
+) -> EntityResponse:
+    ...
+```
+
+## HTTP Status Codes
+
+| Action | Success | Failure |
+|--------|---------|---------|
+| GET    | 200     | 404     |
+| POST   | 201     | 400/422 |
+| PUT    | 200     | 404/422 |
+| DELETE | 204     | 404     |
+
+## Validation
+
+- Request validation via Pydantic models in `app/schemas/`.
+- Never validate manually in route handlers — let the schema do it.

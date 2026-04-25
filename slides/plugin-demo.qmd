@@ -1,0 +1,367 @@
+---
+title: "Knowledge Graph — Obsidian Plugin Demo"
+subtitle: "AI-Powered Study Item Generation & Concept Management"
+author: "DSAN 6725 Team"
+date: today
+format:
+  revealjs:
+    theme: dark
+    slide-number: true
+    code-fold: true
+    code-line-numbers: false
+    highlight-style: github-dark
+    transition: slide
+    width: 1280
+    height: 720
+    footer: "Knowledge Graph Plugin v0.1.0"
+---
+
+## What We Built {.center}
+
+An **Obsidian plugin** backed by a **FastAPI server** that turns your
+personal notes into an AI-driven study system.
+
+::: {.incremental}
+- Write concepts as markdown notes in your vault
+- The plugin reads your knowledge graph (concepts + edges)
+- An LLM pipeline generates study items tailored to **your** knowledge
+- You answer, get graded, and progress through difficulty tiers
+:::
+
+---
+
+## Architecture Overview
+
+```{mermaid}
+%%| fig-width: 10
+flowchart LR
+    subgraph Obsidian["Obsidian Vault"]
+        Notes["Concept Notes\n(Markdown + YAML)"]
+        Items["Item Session Notes\n(Items/*.md)"]
+        Samples["Sample Items\n(SampleItems/)"]
+    end
+
+    subgraph Plugin["Obsidian Plugin (TypeScript)"]
+        IV["ItemGeneratorView"]
+        API["API Client\n(requestUrl)"]
+    end
+
+    subgraph Backend["FastAPI Backend (Python)"]
+        Router["API Router\n/api/v1/items"]
+        Service["Item Service"]
+        Loop["Refinement Loop"]
+    end
+
+    subgraph Agents["LLM Agent Pipeline"]
+        Gen["Generator"]
+        Act["Actor ×3"]
+        Ref["Reflector"]
+        Grd["Grader"]
+        Hard["Hardening\nReflector"]
+    end
+
+    Notes --> IV
+    IV --> API
+    API --> Router
+    Router --> Service
+    Service --> Loop
+    Loop --> Gen --> Act --> Ref --> Grd
+    Loop --> Hard
+    Grd --> Service
+    Service --> API
+    API --> Items
+```
+
+---
+
+## The Generation Pipeline
+
+Each round follows a **4-agent loop** via LLM tool-calling:
+
+| Agent | Role |
+|-------|------|
+| **Generator** | Produces N items using concepts, edges, examples, images |
+| **Actor** (×3 parallel) | Simulated students solve each item |
+| **Reflector** | Evaluates actor solutions, scores quality |
+| **Grader** | Assesses learning progress, summarizes round |
+
+All communication uses **structured tool-calling** (Anthropic Claude Haiku 4.5)
+— not free-text prompt concatenation.
+
+---
+
+## Iterative Hardening (hard / very_hard / expert)
+
+For difficulty ≥ **hard**, items go through up to 3 hardening iterations:
+
+::: {.incremental}
+1. Generate items at **medium** difficulty first
+2. **Actor** solves them — produces reasoning trajectories
+3. **Hardening Reflector** analyzes trajectories:
+   - "Actor solved trivially → add multi-step reasoning"
+   - "High confidence → inject edge cases"
+   - "Few concepts used → require cross-concept synthesis"
+4. Reflector also pulls **random extra concepts** from your graph
+5. **Generator** re-creates items with hardening directives
+6. Repeat — `item(i+1) = f(item(i))`, single-slot context (no accumulation)
+:::
+
+---
+
+## Five Difficulty Tiers
+
+```{mermaid}
+%%| fig-width: 8
+flowchart LR
+    E["Easy"] --> M["Medium"] --> H["Hard\n(+hardening)"]
+    H --> VH["Very Hard\n(+hardening)"]
+    VH --> EX["Expert\n(+hardening)"]
+
+    style E fill:#4CAF50,color:#fff
+    style M fill:#FFC107,color:#000
+    style H fill:#FF9800,color:#fff
+    style VH fill:#F44336,color:#fff
+    style EX fill:#9C27B0,color:#fff
+```
+
+- User **manually selects** difficulty — no forced auto-escalation
+- Hard+ triggers the iterative hardening loop above
+- Extra concepts from your knowledge graph make items harder but solvable
+
+---
+
+## Plugin UI — Concept Import
+
+:::: {.columns}
+
+::: {.column width="50%"}
+### Adding Concepts
+
+- **Search bar** — fuzzy search vault notes
+- **Add Active Note** — one-click current note
+- **Import Active + Linked** — pulls wikilinked notes
+- **Import All Vault** — bulk load
+
+Each note's YAML frontmatter provides:
+
+```yaml
+---
+mastery: 7
+edges:
+  - target: "Conditional Probability"
+    type: prerequisite
+    direction: directed
+---
+```
+:::
+
+::: {.column width="50%"}
+### Managing Edges
+
+- Auto-populated from frontmatter
+- Manual add with type dropdown:
+  - prerequisite, derivation, application
+  - reference, contrast, analogy, custom
+- Direction: directed / undirected
+:::
+
+::::
+
+---
+
+## Plugin UI — Context Images & PDF Upload
+
+:::: {.columns}
+
+::: {.column width="50%"}
+### Inline Context Images
+
+Attach exam paper images as visual context:
+
+- **Attach Image** — file picker (png, jpg, webp)
+- **From Vault** — pick images in your vault
+
+Images are base64-encoded and sent **inline** with
+the tool-calling JSON — Claude sees the image alongside
+concept context when generating items.
+:::
+
+::: {.column width="50%"}
+### PDF → Concept Graph
+
+Upload a PDF paper:
+
+1. **MinerU** extracts text to markdown
+2. **LLM** segments into concept nodes + directed edges
+3. Notes auto-created in vault with YAML frontmatter
+4. Concepts + edges auto-populated in the generator form
+
+Instantly turns any paper into a study-ready knowledge graph.
+:::
+
+::::
+
+---
+
+## Plugin UI — Session Flow
+
+```{mermaid}
+%%| fig-width: 10
+sequenceDiagram
+    participant U as User
+    participant P as Plugin
+    participant B as Backend
+    participant L as LLM Pipeline
+
+    U->>P: Select concepts, edges, difficulty
+    U->>P: Click "Generate Items"
+    P->>B: POST /api/v1/items/generate
+    B->>L: Generator → Actors → Reflector → Grader
+    L-->>B: RoundResult (items + solutions)
+    B-->>P: JSON response
+    P->>P: Create Items/session-*.md
+
+    Note over U: User writes answers in callouts
+
+    U->>P: Click "Grade My Answers"
+    P->>B: POST /api/v1/items/grade-answer
+    B-->>P: Feedback per answer
+    P->>P: Inject feedback into note
+
+    U->>P: Select difficulty, click "Next Round"
+    P->>B: POST /api/v1/items/continue-round
+    B->>L: (hardening if hard+)
+    L-->>B: New items
+    B-->>P: Append to session note
+```
+
+---
+
+## Session Resume & Sample Items
+
+### Resume
+- Session state lives in the **markdown note** (YAML frontmatter)
+- Pick any `Items/*.md` from the dropdown → resume generating rounds
+- Survives Obsidian restarts, backend restarts — fully stateless
+
+### Sample Items
+- `SampleItems/` folder in your vault
+- Paste exam problems as reference items
+- Plugin reads them and feeds to generator as `example_items`
+- Generator mimics the style/format of your samples
+
+---
+
+## Answer Grading
+
+The plugin reads your answers from markdown callouts and grades them:
+
+````markdown
+#### Your Answer
+
+> [!quote]- Write your answer here
+> P(A|B) = P(B|A) * P(A) / P(B)
+> Using the law of total probability for the denominator...
+
+#### Grader Feedback  ← injected by plugin
+> [!success] Score: 8.5/10
+> Strong application of Bayes' theorem.
+> Consider explicitly stating the partition used in the denominator.
+````
+
+- LLM compares your answer against the reference solution
+- Feedback injected directly into the note
+- Scores visible before choosing next round difficulty
+
+---
+
+## Cancel Generation
+
+Misclicks happen — the "Next Round" button has a safety toggle:
+
+::: {.incremental}
+1. Click **"Next Round"** → button becomes **"Cancel Generation"**
+2. Click again → generation result is **discarded** client-side
+3. UI resets — no phantom items appended to your session note
+:::
+
+The backend request completes server-side (Obsidian API limitation),
+but the plugin ignores the response.
+
+---
+
+## Setup for Your Team {.smaller}
+
+### 1. Clone & install backend
+
+```bash
+git clone https://github.com/chaowei312/finalproj-backend.git
+cd finalproj-backend
+pip install -r requirements.txt
+```
+
+### 2. Configure `.env` (copy from `.env.example`)
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+ITEM_GENERATION_PROVIDER=anthropic
+```
+
+### 3. Start the server
+
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+
+### 4. Build & install the plugin
+
+```bash
+cd plugin
+npm install && npm run build
+```
+
+Copy `plugin/main.js`, `plugin/manifest.json`, `plugin/styles.css`
+into your vault at `.obsidian/plugins/knowledge-graph/`.
+
+Enable the plugin in Obsidian Settings → Community Plugins.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | Obsidian plugin (TypeScript, esbuild) |
+| **Backend** | FastAPI (Python 3.11+, async) |
+| **LLM** | Anthropic Claude Haiku 4.5 (tool-calling) |
+| **LLM Fallback** | Groq (OpenAI-compatible, free tier) |
+| **PDF Extraction** | MinerU (`mineru[pipeline]`) |
+| **Data Format** | Markdown + YAML frontmatter |
+| **Session State** | Stateless — note IS the session |
+
+---
+
+## What's Next
+
+::: {.incremental}
+- **Concept CRUD** — full backend persistence (MongoDB)
+- **Embedding pipeline** — semantic search via Pinecone
+- **Graph visualization** — Cytoscape.js panel in Obsidian
+- **Traversal engine** — KST outer-fringe personalized paths
+- **Group landscapes** — merged canonical views across users
+- **Standalone web UI** — move beyond Obsidian for broader access
+:::
+
+---
+
+## Demo Time {.center}
+
+Let's generate some study items live.
+
+:::{.callout-tip}
+### Try it yourself
+1. Open Obsidian with the plugin installed
+2. Click the brain icon in the left ribbon
+3. Import your concept notes
+4. Hit **Generate Items**
+:::

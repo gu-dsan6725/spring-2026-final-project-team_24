@@ -1,0 +1,45 @@
+---
+description: Team Git workflow — branch naming, commit messages, PR conventions
+alwaysApply: true
+---
+
+# Git Conventions
+
+## Branch Naming
+
+```
+feat/entity-connections      # new feature
+fix/embedding-timeout        # bug fix
+refactor/service-layer       # refactoring
+docs/api-schema              # documentation
+test/item-generation         # adding tests
+```
+
+Always branch from `main`. Keep branches short-lived.
+
+## Commit Messages
+
+```
+feat: add entity embedding pipeline
+fix: handle null content_type in edge creation
+refactor: extract repository layer from services
+docs: update plan.md with data entity spec
+test: add integration tests for group permissions
+```
+
+- Prefix with type: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`.
+- Imperative mood, lowercase, no period at end.
+- Body (optional): explain *why*, not *what*.
+
+## Pull Requests
+
+- One logical change per PR.
+- PR description must include: summary, what changed, how to test.
+- Require at least 1 team member review before merge.
+
+## What NOT to Commit
+
+- `.env` files or any secrets/API keys
+- `__pycache__/`, `.pyc` files
+- IDE-specific files not in `.cursor/rules/` (e.g., `.vscode/settings.json`)
+- Large binary files or datasets

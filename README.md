@@ -1,60 +1,113 @@
-# DSAN 6725 Final Project
+# DSAN 6725 — Team 24 Final Project
 
-This repository contains information about deliverables, project ideas, and all things related to the final project.
+**Dependency-aware, multi-agent item generation for personalized study inside Obsidian.**
 
-## Overview
+An Obsidian plugin + FastAPI backend that turns a learner's own notes into
+scheduled practice items. A multi-agent pipeline builds a dependency
+graph over the learner's concepts, generates problems that respect that
+graph, grades the learner's answers at concept-level granularity, and
+updates per-concept mastery so the next round combines mastered concepts
+into harder integration items instead of re-drilling them.
 
-DSAN 6725 is an applied AI course. The focus is on building production-quality AI agent systems that solve real problems. All projects must implement AI agents unless an alternative approach is explicitly approved by the professor.
+## What's in this repo
 
-This repo provides project ideas but you are not limited to these. You can explore other ideas but it is incumbent upon you (your team) to discuss these ideas and get approval before proceeding. The ideas suggested here are practically useful and have been selected because they have a reasonable chance of success in a 6-week timeframe.
+```
+team_24/
+├── backend/        FastAPI app + AI pipelines + Obsidian plugin source
+│   ├── app/        Schemas, API, AI pipelines (graph agents, generator,
+│   │               grader, sample analyzer), provider adapters
+│   ├── plugin/     Obsidian plugin (TypeScript, esbuild)
+│   ├── tests/      Pytest suite (pipeline unit tests, fixture-driven
+│   │               evals)
+│   ├── evals/      Offline item-evaluation harness
+│   ├── notes/      Architecture design docs referenced by the paper
+│   └── references/ Citations used in the paper
+├── slides/         Presentation slides (Quarto → PDF/RevealJS)
+├── paper/          Conference-style paper (PDF + source)
+├── poster/         Conference poster (PDF)
+└── docs/           Project website (Quarto, GitHub Pages)
+```
 
-This repo is organized into the following parts:
+## Feature highlights (what's implemented and in this submission)
 
-- [Project Ideas](#project-ideas)
-- [Deliverables](#deliverables)
-- [FAQ](#faq)
-- [Resources](#resources)
+- **Dependency-aware scheduling.** Backend agents (`app/ai/pipelines/graph/`)
+  build a concept dependency graph; items are generated top-down so
+  prerequisites are exercised before their dependents. A depth-aware
+  scheduler auto-advances `focus_depth` when mastery thresholds are hit.
+- **Per-concept grading.** `app/ai/pipelines/answer_grader.py` returns a
+  verdict per concept (`correct` / `alt_path` / `misunderstood` /
+  `untested`), not just a scalar — alternate solutions still credit the
+  concept, and a single wrong answer never punishes concepts the
+  learner didn't even touch.
+- **Elo-style mastery tracking.** The plugin updates per-concept mastery
+  from the verdicts and sends `user_mastery` back to the generator, so
+  mastered concepts graduate to *integration* items instead of
+  re-drilling.
+- **Multimodal sample analyzer.** Learners drop a markdown sample *or an
+  image of an exam problem*; `app/ai/pipelines/sample_analyzer.py`
+  sends it to a multimodal LLM (OpenAI / Anthropic) and returns
+  structured pedagogical feedback (covered concepts, catalog gaps,
+  estimated difficulty, pedagogical notes). The analysis is threaded
+  back into the generator prompt as `analysis_notes` so few-shot
+  samples carry intent, not just text.
+- **Coverage visualization.** A single dense row in the Obsidian view
+  where each cell is a concept ordered by dependency depth; cell color
+  tracks the highest difficulty the learner has exercised that concept
+  at, with tick marks for depth boundaries and the current focus
+  cutoff.
+- **PDF → concepts ingest.** MinerU-backed paper ingest splits a PDF
+  into per-section markdown with image references; each section
+  becomes a concept candidate, and the backend can embed and persist
+  vectors for retrieval.
 
-## Project Ideas
+See `backend/README.md` for a deeper architectural walkthrough and
+`backend/notes/` for per-module design specs.
 
-These project ideas have well-defined problem statements, but the implementation details are flexible and open to creative solutions. Use the descriptions provided as springboards for your own approaches to solving these problems.
+## Running it
 
-### Spring 2026 Projects
+### Backend
 
-- [AI Tech Debt Forge](./spring-2026/ai-tech-debt-forge.md) - Multi-agent system for codebase modernization with persona-based validation
-- [AI Trading Strategist](./spring-2026/ai-trading-strategist.md) - Paper trading system using Alpaca API for strategy development and backtesting
-- [AI Spark Optimizer](./spring-2026/ai-spark-optimizer.md) - Intelligent Spark job analysis with interpretable performance recommendations
-- [Cloud Cost Refinery](./spring-2026/cloud-cost-refinery.md) - AWS cost optimization agent that generates executable cleanup commands
-- [AI Schema Harmonizer](./spring-2026/ai-schema-harmonizer.md) - Normalize schemas across SaaS tools with observability data focus
-- [AI Data Prep Pipeline](./spring-2026/ai-data-prep-pipeline.md) - Universal document processing for RAG and vector search
+```bash
+cd backend
+python -m venv .venv && source .venv/bin/activate   # or .venv\Scripts\activate on Windows
+pip install -r requirements.txt
+cp .env.example .env   # fill in OPENAI_API_KEY / ANTHROPIC_API_KEY / GROQ_API_KEY
+uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
 
-### Archived Projects
+### Obsidian plugin
 
-Previous semester project ideas are available in [spring-2025/](./spring-2025/).
+```bash
+cd backend/plugin
+npm install
+OBSIDIAN_VAULT_PLUGIN_DIR="/path/to/YourVault" npm run deploy
+```
+
+Reload Obsidian. The plugin's settings tab asks for the backend URL
+(defaults to `http://127.0.0.1:8000`).
+
+### Tests
+
+```bash
+cd backend
+pytest -q
+```
 
 ## Deliverables
 
-All deliverables are described in [deliverables.md](./deliverables.md).
+| Deliverable | Location | Status |
+|---|---|---|
+| Code repository | `backend/` | Included |
+| Paper (8-12 pp, conference format) | `paper/` | Draft forthcoming |
+| Slides | `slides/plugin-demo.qmd` | Draft included |
+| Poster (48" × 36") | `poster/` | Forthcoming |
+| Project website | `docs/` | Forthcoming |
+| Demo video / link | `docs/demo.md` | Forthcoming |
 
-Summary of what you will produce:
-- Project paper (8-12 pages, conference format)
-- Code repository (production quality)
-- Working demo
-- Presentation slides
-- Conference-style poster
+## Team
 
-## FAQ
+Team 24 — DSAN 6725 Applied GenAI, Spring 2026.
 
-**Can I do this project alone or with more than 4 people?**
-No. Teams must have 2-4 members.
+## License
 
-**Can I use any model provider (OpenAI, Anthropic, Google, etc.)?**
-Yes. Use whatever works best for your project.
-
-**What if I want to propose a different project idea?**
-Discuss with the professor before Milestone 1. Your proposal should have a clear problem statement, feasible scope for 6 weeks, and an AI agent architecture.
-
-## Resources
-
-- Course [bookmarks](https://github.com/gu-dsan6725/bookmarks/tree/main) repository
-- [LangChain](https://python.langchain.com/), [LlamaIndex](https://docs.llamaindex.ai/), [Claude Agent SDK](https://github.com/anthropics/anthropic-cookbook)
+MIT. See [`LICENSE`](LICENSE).

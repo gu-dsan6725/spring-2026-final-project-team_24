@@ -1,0 +1,4 @@
+# Optional: offline item-generation evals (Braintrust + autoevals).
+# pip install -r requirements.txt -r requirements-eval.txt
+braintrust
+autoevals

@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Cursor — track .cursor/rules/ (shared team rules), ignore the rest
+.cursor/*
+!.cursor/rules/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Logs
+*.log
+
+# Offline eval run output (regenerate: python evals/item_generation/eval.py)
+evals/item_generation/eval_metrics.json
+
+# Node.js
+node_modules/
+
+# Plugin build artifacts
+plugin/main.js
+
+# Vendor — cloned repos for module integration (each member clones locally)
+vendor/
+
+# Data & media (large files)
+*.sqlite3
+*.db
+uploads/
+data/extracted/
+data/*.pdf

@@ -1,0 +1,44 @@
+---
+description: AI service layer — LLM providers, embeddings, configurable pipelines
+globs: "app/services/ai/**/*.py,app/ai/**/*.py"
+alwaysApply: false
+---
+
+# AI Service Conventions
+
+## Provider Abstraction
+
+All LLM and embedding interactions go through an abstract interface so groups can swap providers.
+
+```python
+class EmbeddingProvider(Protocol):
+    async def embed(self, texts: list[str]) -> list[list[float]]: ...
+
+class LLMProvider(Protocol):
+    async def complete(self, prompt: str, **kwargs) -> str: ...
+```
+
+- Concrete implementations live in `app/ai/providers/` (e.g., `openai.py`, `anthropic.py`).
+- Provider selection is per-group configuration, resolved at runtime — never hardcode a provider.
+
+## Pipeline Design
+
+Each AI capability is a pipeline with clear stages:
+
+- **Connection inference**: embed entities -> compute similarity -> threshold -> create edges
+- **Item construction**: select entities -> build prompt -> call LLM -> validate output -> store item
+- **Handwriting validation**: OCR image -> build prompt with solution context -> call vision LLM -> return feedback
+
+Pipelines are composable: stages can be independently swapped or reconfigured per group.
+
+## Safety & Cost
+
+- Always set `max_tokens` and `temperature` explicitly.
+- Log token usage per request for cost tracking.
+- Implement retry with exponential backoff for provider API calls.
+- Never send user PII to external providers unless explicitly consented.
+
+## MCP Integration
+
+- MCP server/client code lives in `app/mcp/`.
+- Each group's MCP tools are dynamically registered based on their AI service config.

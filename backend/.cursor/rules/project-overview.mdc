@@ -1,0 +1,42 @@
+---
+description: Core project context — knowledge-sharing superhypergraph platform with concepts, edges, items, groups, traversal, and AI optimization
+alwaysApply: true
+---
+
+# Project Overview
+
+This is the backend for a **knowledge-sharing platform** built on a content-rich superhypergraph. Users contribute concepts (markdown, video URLs, audio), connect them through directed edges, and derive study items — powered by configurable AI services with a dual-loop optimization architecture.
+
+## Domain Model (quick reference)
+
+- **Concept** — a unit of knowledge (`.md`, video URL, audio). Lives in a user's personal graph.
+- **Edge** — a unified connection between two concepts. Has direction (directed/undirected), type (prerequisite, reference, application, derivation, contrast, analogy, custom), optional note, and origin. Traversal is derived from directed `prerequisite` edges — no separate edge type.
+- **Item** — a hyperedge spanning multiple concepts as foundation: problem, exercise, definition, flashcard.
+- **Data Entity** — a dataset reference with download metadata, description, and appendable freeform JSON entries (ML metrics, pipeline results). Conceptually a specialized "dive."
+- **Dive** *(experimental, deferred)* — an advanced exploration hyperedge spanning multiple foundation concepts. Data entities are a concrete specialization.
+- **Group Landscape** — merged view of all members' notes; similar notes collapse into canonical nodes with preserved perspectives.
+- **Traversal Engine** — personalized learning path via Knowledge Space Theory (outer fringe of knowledge state).
+- **AI Optimization** — inner loop (ACE: continuous context refinement) + outer loop (Meta-Harness: periodic pipeline optimization).
+- **Fork** — a universal provenance operation applicable to any entity (concept, edge, dive).
+
+## Three-Layer Graph
+
+- **Personal graph** — each user's own concepts and edges (source of truth for what they know).
+- **Group landscape** — merged, deduplicated canonical view (computed, never modifies personal graphs).
+- **Traversal graph** — personalized DAG filtered by user's knowledge state.
+
+## Frontend
+
+- **Obsidian plugin** (`plugin/` directory) — TypeScript thin client communicating with the backend via `requestUrl()`
+- Plugin provides graph visualization (Cytoscape.js), traversal panel, item viewer, landscape browser, and a custom publish command (save/index/share privacy modes)
+- Community plugins complement ours: obsidian-spaced-repetition (local flashcards), Relay (CRDT collab), Extended Graph (vault-link visualization)
+- See `notes/14-obsidian-integration.md` for the full integration strategy
+
+## Tech Constraints
+
+- Backend language: **Python 3.11+**
+- API framework: **FastAPI** with async endpoints
+- Frontend: **Obsidian plugin** in TypeScript (esbuild, `es2018`, CommonJS)
+- Always reference `plan.md` at the repo root for full architectural context
+- Service-oriented: concepts, data, items, groups, traversal, and AI services are separate modules
+- All configuration (API keys, DB URLs) via environment variables — never hardcode secrets
