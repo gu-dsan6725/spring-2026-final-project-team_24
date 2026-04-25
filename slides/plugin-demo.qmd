@@ -30,63 +30,51 @@ personal notes into an AI-driven study system.
 
 ---
 
-## Architecture Overview
+## Architecture Overview {.smaller}
+
+Two feedback cycles drive every round. **Solid** = data flow, **dashed** = feedback edge.
 
 ```{mermaid}
-%%| fig-width: 10
+%%| fig-width: 12
+%%| fig-height: 4.5
 flowchart LR
-    subgraph Obsidian["Obsidian Vault"]
-        Notes["Concept Notes\n(Markdown + YAML)"]
-        Items["Item Session Notes\n(Items/*.md)"]
-        Samples["Sample Items\n(SampleItems/)"]
-    end
+    %% --- Sample item evaluation (pre-round) ---
+    Sample["Sample item<br/>(md / image)"] ==> SE["<b>Sample Evaluator</b><br/>multimodal pre-grading"]
+    SE -. "analysis_notes" .-> Gen
 
-    subgraph Plugin["Obsidian Plugin (TypeScript)"]
-        IV["ItemGeneratorView"]
-        API["API Client\n(requestUrl)"]
-    end
+    %% --- Core hardening loop (during round) ---
+    Gen["<b>Generator</b>"] ==> Act["<b>Actor ×3</b><br/>simulated solutions"]
+    Act ==> Ref["<b>Reflector</b><br/>quality + hardening"]
+    Ref -. "hardening directives<br/>(if difficulty ≥ hard)" .-> Gen
+    Ref ==> Items["Items in vault"]
 
-    subgraph Backend["FastAPI Backend (Python)"]
-        Router["API Router\n/api/v1/items"]
-        Service["Item Service"]
-        Loop["Refinement Loop"]
-    end
-
-    subgraph Agents["LLM Agent Pipeline"]
-        Gen["Generator"]
-        Act["Actor ×3"]
-        Ref["Reflector"]
-        Grd["Grader"]
-        Hard["Hardening\nReflector"]
-    end
-
-    Notes --> IV
-    IV --> API
-    API --> Router
-    Router --> Service
-    Service --> Loop
-    Loop --> Gen --> Act --> Ref --> Grd
-    Loop --> Hard
-    Grd --> Service
-    Service --> API
-    API --> Items
+    classDef phase fill:#1e293b,stroke:#3b82f6,color:#e2e8f0,stroke-width:2px;
+    classDef data  fill:#0f172a,stroke:#475569,color:#cbd5e1,stroke-width:1px;
+    class SE,Gen,Act,Ref phase
+    class Sample,Items data
 ```
+
+::: {.fragment .fade-in}
+*Per-concept Answer Evaluator (post-reply → Elo mastery + `focus_depth`) is detailed two slides on.*
+:::
 
 ---
 
-## The Generation Pipeline
+## The Generation Pipeline {.smaller}
 
-Each round follows a **4-agent loop** via LLM tool-calling:
+A round chains a **pre-grading pass + 5-stage loop + per-concept answer grading**, all via LLM tool-calling:
 
 | Agent | Role |
 |-------|------|
-| **Generator** | Produces N items using concepts, edges, examples, images |
-| **Actor** (×3 parallel) | Simulated students solve each item |
-| **Reflector** | Evaluates actor solutions, scores quality |
-| **Grader** | Assesses learning progress, summarizes round |
+| **Sample Evaluator** *(pre-round, multimodal)* | Pre-grades sample reference (md / image) → `analysis_notes` for Generator |
+| **Feasibility** | Gates whether requested concepts × difficulty is generatable |
+| **Generator** | Produces N items from concepts, edges, examples, images, `analysis_notes` |
+| **Actor** ×3 | Simulated students solve each item in parallel |
+| **Reflector** | Scores quality, drives refinement (+hardening for hard+) |
+| **Round Evaluator** | Summarizes round quality, supports difficulty progression |
+| **Answer Evaluator** *(per-concept)* | Verdicts `correct / alt_path / misunderstood / untested` → Elo mastery |
 
-All communication uses **structured tool-calling** (Anthropic Claude Haiku 4.5)
-— not free-text prompt concatenation.
+Structured tool-calling (Anthropic Claude Haiku 4.5) — no free-text concatenation.
 
 ---
 
@@ -216,7 +204,7 @@ sequenceDiagram
     U->>P: Select concepts, edges, difficulty
     U->>P: Click "Generate Items"
     P->>B: POST /api/v1/items/generate
-    B->>L: Generator → Actors → Reflector → Grader
+    B->>L: Generator → Actors → Reflector → Round Evaluator
     L-->>B: RoundResult (items + solutions)
     B-->>P: JSON response
     P->>P: Create Items/session-*.md
@@ -263,7 +251,7 @@ The plugin reads your answers from markdown callouts and grades them:
 > P(A|B) = P(B|A) * P(A) / P(B)
 > Using the law of total probability for the denominator...
 
-#### Grader Feedback  ← injected by plugin
+#### Evaluator Feedback  ← injected by plugin
 > [!success] Score: 8.5/10
 > Strong application of Bayes' theorem.
 > Consider explicitly stating the partition used in the denominator.

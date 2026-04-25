@@ -1,0 +1,311 @@
+---
+title: "Grounded Study Item Generation from Personal Notes: A Multi-Agent Obsidian Plugin with Per-Concept Grading and Mastery Tracking"
+subtitle: "Conference draft (English); Obsidian plugin + FastAPI backend"
+author:
+  - name: "Chaowei Wang, Yubo Xing"
+    affiliation: "Georgetown University / DSAN 6725"
+date: "April 2026"
+abstract: |
+  Personal note vaults accumulate markdown notes, PDFs, and media, but converting them into **study items** — problems, flashcards, code challenges — is manual, time-consuming, and error-prone. Large language models (LLMs) can draft such items cheaply, but outputs routinely **drift** from the exact content the learner stored, weakening instructional trust. We describe an **Obsidian plugin** and a **FastAPI** backend that let a learner select concepts from their own vault, generate study items from them, submit answers, and receive **per-concept evaluation** feedback — all while keeping notes and generated artifacts inside the vault. The backend runs a **session-based multi-agent loop**: a feasibility gate, a tool-calling **generator** that emits items whose `foundation_concept_ids` must reference declared concepts, solving **actors**, a quality **reflector** with bounded refinement, optional **iterative hardening** for high-difficulty requests, and an **answer evaluator** that returns a verdict (`correct` / `alt_path` / `misunderstood` / `untested`) per concept rather than a single scalar. A complementary **multimodal sample evaluator** accepts a learner-supplied reference problem — markdown or a photographed exam clip — and returns structured pedagogical feedback (covered concepts, catalog gaps, estimated difficulty, issues) that is threaded back into the generator. Per-concept verdicts drive an **Elo-style mastery update**; mastered concepts graduate to *integration* items rather than being re-drilled, and a depth-aware **scheduler** advances through a dependency ordering produced by a link-architect agent over ingested PDF sections (**MinerU**-extracted). **Pilot evaluation** on the shipped two-case `dataset.json` using the **Braintrust** harness: all cases completed without runtime errors; mean **91%** rubric satisfaction, **69%** item clarity (LLM judge), **85%** structural validity, **87.5%** latency band, **100%** foundation coverage / prompt-shape / token-efficiency heuristics, **46%** markdown-structure heuristic. With $N{=}2$ these numbers **characterize the harness**, not a benchmark; no baselines are reported. We close with limitations and responsible-AI considerations specific to the shipped surface.
+keywords: [LLM agents, educational technology, item generation, automated grading, Obsidian, retrieval-augmented generation, evaluation]
+bibliography: references.bib
+link-citations: true
+format:
+  pdf:
+    documentclass: article
+    papersize: letter
+    fontsize: 11pt
+    geometry:
+      - margin=1in
+    number-sections: true
+    toc: false
+    include-in-header:
+      - text: |
+          \usepackage{tikz}
+          \usetikzlibrary{arrows.meta,positioning,calc}
+  html:
+    toc: true
+    number-sections: true
+---
+
+# 1. Introduction
+
+## Problem and importance
+
+Learners maintain thousands of notes and reference PDFs in personal knowledge tools, yet converting that content into **study material** — problems, flashcards, code challenges — is overwhelmingly manual. LLMs can draft items cheaply, but generic prompting produces items that **drift** from the learner's exact wording, invoke prerequisites the learner never recorded, or **hallucinate** content. We target the gap: a plugin that sits **inside** the user's note vault, generates items against the concepts the user explicitly picked, grades free-text answers at **per-concept granularity**, and adapts its difficulty as the learner masters concepts.
+
+## Motivation and relevance to applied AI
+
+The work is applied AI in three concrete senses. (i) **Tool-using agents** are necessary to keep item JSON structurally valid — we use LLM provider *tool / function calling* and structured JSON modes. (ii) **Multimodal input** matters in practice — learners want to drop a photograph of an exam problem and have the system reason about it; we thread `image_url` blocks through OpenAI and Anthropic chat completions. (iii) **Evaluation rigor** matters — we ship an offline Braintrust harness with LLM judges and heuristic scorers alongside the code, rather than hand-run spot checks.
+
+## Research question
+
+**Central question:** Can a pipeline that combines (a) learner-curated concepts, (b) multi-agent item synthesis with feasibility and quality gates, (c) per-concept answer grading, and (d) an Elo-style mastery loop be built end-to-end inside a personal note vault, validated with **repeatable offline scoring**?
+
+We answer **architecturally and empirically at pilot scale** — the shipped plugin and backend implement the pipeline, and a two-case evaluation run exercises the gates and scorers. Generalization claims await larger datasets and human study (**Section 9**).
+
+## Scope
+
+This paper describes **what is implemented and runnable** in the accompanying repository: an Obsidian plugin, a FastAPI service exposing three capability groups (item generation / grading, PDF extraction via **MinerU** [@mineru], and vector index / search via **Pinecone** [@pinecone]), plus an offline evaluation harness. We do not claim a collaborative knowledge platform, shared graph, or persistence layer beyond what the plugin writes into the vault as markdown.
+
+# 2. Related work
+
+**LLM tutoring and item generation.** Generic prompting for quiz generation is well-documented in developer blogs but rarely grounded to a learner's *own* content. We differ in two ways: items must declare `foundation_concept_ids` drawn verbatim from the user's concept list (post-hoc validator), and quality is enforced through an explicit **actor–reflector** loop rather than a single opaque chain-of-thought prompt.
+
+**Automated evaluation.** Most LLM evaluators return a scalar score per answer. We emit a **list of per-concept verdicts** (`correct` / `alt_path` / `misunderstood` / `untested`) so alternate solution paths still credit the concept they exercised, and a wrong answer never punishes concepts the learner did not touch. This directly feeds an Elo-style mastery update rather than a single EWMA on a session-level score.
+
+**RAG over personal corpora.** We retrieve against user-specific Pinecone namespaces built from MinerU-extracted PDF sections, chunked with char-window sub-chunking. The plugin lets users edit the extracted markdown before embeddings are computed, so retrieval targets remain **human-editable** rather than locked inside a pipeline-owned index.
+
+**AI-powered study tools.** Consumer flashcard apps such as **Quizlet** [@quizlet] and **Anki** [@anki] optimize retention scheduling over manually authored decks; we target *automated authoring* from learner-owned notes with structural validators and quality loops, rather than optimizing review intervals.
+
+**Personal note apps as hosts.** **Obsidian** [@obsidian], **Roam Research** [@roamresearch], and **Logseq** [@logseq] host the user's notes but do not ship LLM agent pipelines for item generation. We add a plugin-shaped integration that keeps notes local while offloading compute to a local or remote FastAPI backend.
+
+**Scientific PDF ingestion.** Layout-aware extractors such as **MinerU** [@mineru] recover structure from PDFs; we chain extraction to section-aware markdown splitting, sub-chunking, and vector upsert so *reading* feeds the same backend that drives *practice*.
+
+**Gap.** What is missing in prior work is the combination of (i) in-vault workflow, (ii) structural + pedagogical quality gates on generated items, (iii) per-concept grading verdicts, and (iv) an offline evaluation harness that ships alongside the code. This paper describes one such implementation.
+
+# 3. System architecture
+
+## High-level architecture
+
+The system is a **thin Obsidian plugin + thick Python backend**. The plugin (TypeScript, esbuild) runs inside Obsidian and calls a FastAPI server over HTTP. Three capability groups are exposed:
+
+- **Item session** (`/api/v1/items/*`) — generation, grading, per-round refinement, sample analysis.
+- **Extraction** (`/api/v1/extract/*`) — MinerU-based PDF ingest into vault-local `sections/*.md`.
+- **Vectors** (`/api/v1/vectors/*`) — index / search in per-user Pinecone namespaces.
+
+Session state for item generation lives **in memory** on the backend (proof-of-concept). Any durable state lives in the Obsidian vault as markdown notes with frontmatter.
+
+::: {.content-visible when-format="pdf"}
+```{=latex}
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+  font=\footnotesize,
+  >=Latex,
+  arr/.style={->, thick},
+  lbl/.style={inner sep=1pt, fill=white, pos=0.45},
+  box/.style={draw, rounded corners, align=center, inner sep=5pt, minimum width=2.6cm},
+  small/.style={draw, rounded corners, align=center, inner sep=3pt, minimum width=2.05cm, minimum height=7mm},
+  agent/.style={draw, rounded corners, align=center, inner sep=2pt, minimum height=6mm, minimum width=1.45cm}
+]
+  % --- Top: vault and client ---
+  \node[box, minimum width=3.2cm] (vault) {Obsidian vault\\(notes, PDFs)};
+  \node[box, below=8mm of vault] (plugin) {Obsidian plugin\\(TypeScript)};
+  \node[box, right=24mm of plugin] (api) {FastAPI\\backend};
+  \draw[arr] (vault) -- (plugin);
+  \draw[arr] (plugin) -- node[lbl, above] {\texttt{HTTP}} (api);
+
+  % --- Three service columns under API ---
+  \node[small, anchor=north] (ex) at ($(api.south)+(-3.4,-4mm-0.85)$) {Extraction /\\paper ingest};
+  \node[small, anchor=north] (vec) at ($(api.south)+(0,-4mm-0.85)$) {Vectors\\(index / search)};
+  \node[small, anchor=north] (sess) at ($(api.south)+(3.4,-4mm-0.85)$) {Item session};
+  \draw[arr, shorten >=2.5pt] (api.south) -| (ex.north);
+  \draw[arr, shorten >=2.5pt] (api.south) -- (vec.north);
+  \draw[arr, shorten >=2.5pt] (api.south) -| (sess.north);
+
+  % --- External systems ---
+  \node[small, below=7mm of ex] (mineru) {MinerU};
+  \node[small, below=7mm of vec] (pine) {Pinecone};
+  \draw[arr] (ex) -- node[right, xshift=1mm] {\tiny extract} (mineru);
+  \draw[arr] (vec) -- node[right, xshift=1mm] {\tiny index} (pine);
+
+  % --- Agent pipeline (anchored under item session) ---
+  \node[agent, below=14mm of sess] (F) {Feasibility};
+  \node[agent, right=2mm of F] (G) {Generator};
+  \node[agent, right=2mm of G] (A) {Actors};
+  \node[agent, right=2mm of A] (R) {Reflector};
+  \node[agent, right=2mm of R] (Gr) {Round\\evaluator};
+  \foreach \a/\b in {F/G, G/A, A/R, R/Gr}
+    \draw[arr] (\a.east) -- (\b.west);
+  \node[above=1pt of R, font=\tiny] {$\pm$ hardening};
+  \draw[arr, shorten >=2pt] (sess.south) -- (F.north);
+
+  % --- Sample evaluator (pre-round, multimodal): sess -> SA -> Generator
+  \node[agent, above=5mm of G, minimum width=1.7cm] (SA) {Sample\\evaluator};
+  \draw[arr, shorten >=1pt]
+    (sess.south east) .. controls +(0.6,-0.4) and +(0,0.6) .. (SA.north);
+  \draw[arr, shorten >=1pt]
+    (SA.south) -- node[lbl, right, font=\tiny] {analysis\_notes} (G.north);
+
+  % --- Answer path: two horizontal chords (above/below) so arrows stay outside
+  %     boxes and directions are unambiguous: submit = learner -> evaluator,
+  %     feedback = evaluator -> learner (arrow tip at path end).
+  \node[box, minimum width=2.2cm, below=12mm of G] (ag) {Answer evaluator\\(per-concept)};
+  \node[box, minimum width=2.0cm, left=16mm of ag] (user) {Learner\\(replies)};
+  \draw[arr, shorten <=1pt, shorten >=1pt]
+    ($(user.east)+(0,2.2mm)$) -- node[midway, above, font=\tiny, inner sep=1pt] {submit}
+    ($(ag.west)+(0,2.2mm)$);
+  \draw[arr, shorten <=1pt, shorten >=1pt]
+    ($(ag.west)+(0,-2.2mm)$) -- node[midway, below, font=\tiny, inner sep=1pt] {verdicts}
+    ($(user.east)+(0,-2.2mm)$);
+
+  % --- Mastery feedback loop: Answer evaluator -> Item session (next round)
+  \draw[arr, shorten <=1pt, shorten >=1pt]
+    (ag.east) .. controls +(1.0,0) and +(0.4,-1.6) .. (sess.south)
+    node[pos=0.55, right, font=\tiny, inner sep=1pt] {mastery + focus\_depth};
+
+\end{tikzpicture}
+\caption{Shipped surface: vault-local notes, HTTP API, external extract/index services, the multimodal sample evaluator that pre-grades reference items into \texttt{analysis\_notes}, the staged item-generation loop, and the per-concept answer evaluator whose verdicts feed mastery / depth-aware scheduling back into the next round.}
+\label{fig:system-architecture}
+\end{figure}
+```
+:::
+
+::: {.content-visible when-format="html"}
+**Figure (HTML build):** Obsidian vault $\rightarrow$ plugin $\xrightarrow{\text{HTTP}}$ FastAPI $\rightarrow$ branches to extraction (MinerU), vectors (Pinecone), and item session. A **sample evaluator** pre-grades any learner-supplied reference (markdown or image) and threads `analysis_notes` into the Generator. Item session then drives Feasibility $\rightarrow$ Generator $\rightarrow$ Actors $\rightarrow$ Reflector ($\pm$ hardening) $\rightarrow$ Round evaluator. Learner replies are evaluated by a separate per-concept Answer evaluator whose verdicts feed mastery and depth-aware scheduling back into the next round. *(PDF build shows the same content as a vector figure.)*
+:::
+
+## Agent roles and responsibilities
+
+| Role | Responsibility |
+|------|----------------|
+| **Feasibility classifier** | Routes each request to `abandon`, `generate_with_review`, or `generate` based on item type, concept count, and difficulty (`feasibility_check`). |
+| **Generator** | Emits items via **tool-calling** from curated JSON views of concepts, examples, and optional images (`item_construction`). Output passes a post-hoc validator that rejects any `foundation_concept_ids` not present in the request. |
+| **Actors** | Attempt to solve generated items using the same concept context, surfacing failure modes for refinement (`actor`). |
+| **Reflector** | Scores quality and drives the inner refinement loop; a **hardening** variant issues "make harder" directives for high difficulty tiers (`reflector`, `item_loop`). |
+| **Round evaluator** | Summarizes round quality and supports difficulty progression across rounds (`grader` in code). |
+| **Answer evaluator** | Compares learner free text to the reference solution **per concept** and emits `correct` / `alt_path` / `misunderstood` / `untested` verdicts (`answer_grader` in code). |
+| **Sample evaluator** (pre-round, optional) | Multimodal LLM call that accepts a learner-supplied reference problem — markdown *or* a photographed exam clip — and the current concept catalog; returns summary, estimated difficulty, covered concepts, catalog gaps, pedagogical notes, issues (`sample_analyzer` in code). The analysis is threaded back into the generator as `analysis_notes`. |
+| **Link-architect** (ingest, optional) | Proposes typed directed edges between extracted paper sections and assigns a topological **depth** used by the scheduler (`graph_builder`). |
+
+## Coordination and state
+
+**Per round**, `refine_round` orchestrates: initialize difficulty (possibly `medium` first under hardening) → generate → actors → reflector → repeat up to `MAX_REFINEMENT_ITERATIONS` → optional hardening iterations capped by `MAX_HARDENING_ITERATIONS`. Messages are assembled programmatically from curated JSON views; trajectories and feedback accumulate in a `RoundResult` payload returned to the client.
+
+**Between rounds**, the plugin closes a **mastery feedback loop**: per-concept verdicts from the answer evaluator drive an Elo-style update on each concept's mastery score (learning rate `MASTERY_LR`, prior `MASTERY_DEFAULT`). Concepts whose mastery exceeds `MASTERY_THRESHOLD` are flagged *mastered* and still passed to the generator, but with a directive to use them as prerequisites for **integration** items combining weaker concepts rather than re-drilling them alone. The same signal drives a **depth-aware scheduler** that advances `focus_depth` along the link-architect's topological ordering once per-depth mastery clears threshold, and a client-side **coverage visualization** — a single dense row where each concept renders as a cell colored by the highest difficulty at which it has been exercised, with tick marks for depth boundaries and a bolder tick at the current focus cutoff.
+
+**Shared state** is the in-memory session dict on the backend plus client-persisted markdown session files in the vault. No database, no multi-user coordination.
+
+## External services
+
+- **MinerU** [@mineru] — PDF extraction to markdown + assets.
+- **OpenAI-compatible embeddings** [@openai_embeddings] — concept and chunk vectors.
+- **Pinecone** [@pinecone] — per-user namespaces (`user_{id}_concepts`, `user_{id}_docs`); degrades gracefully (HTTP 503) when unset.
+- **LLM providers** — configurable: **OpenAI** (chat, vision, embeddings), **Anthropic** [@anthropic] (chat, vision), **Groq** [@groq] (chat, text-only JSON mode; vision payloads stripped with a warning).
+- **Braintrust** [@braintrust] — optional trace logging for offline `Eval()` runs (`evals/item_generation/`).
+
+# 4. Data and evaluation
+
+## Data sources
+
+Development and validation use **inline JSON cases** in `evals/item_generation/dataset.json` (currently **two** scenarios: a single beginner Python concept; two linked statistics concepts for a comparison-style problem). Each case supplies an `InlineItemGenerateRequest`-compatible payload, rubric text as `expected_output`, and optional `user_requirements` that stress valid `foundation_concept_ids`. The same schema supports expansion to dozens or hundreds of cases.
+
+**Paper-ingest path** (separate from the item eval) processes user-provided lawful PDFs, produces vault-local `sections/*.md`, `.meta/` sidecars, and optional `edges.json`; quantitative ingest benchmarks are not reported here.
+
+## Preprocessing
+
+For the **offline item eval**, no additional cleaning beyond schema validation: cases are hand-authored to list allowed concept id strings explicitly so the structural coverage scorer aligns with known-good ids. For **ingest**, the pipeline normalizes PDF bytes, runs MinerU [@mineru] extraction, splits on `##` headers, rewrites image paths, sub-chunks text windows (`DOC_CHUNK_SIZE`, `DOC_CHUNK_OVERLAP`), and embeds chunks.
+
+## Metrics and setup
+
+The harness (`evals/item_generation/eval.py`) runs **generation first**, then **Braintrust** [@braintrust] `Eval()` with scorers grouped as:
+
+1. **Cost / latency bands** — proxy token count (tiktoken-based) and wall-clock.
+2. **Heuristics** — body length, answer length, markdown structure, problem prompt shape, foundation coverage.
+3. **LLM judges** — `RubricSatisfaction`, `ItemClarity` using packed rubric blocks.
+4. **Gates** — `NoRunError`, `FeasibilityAlign`, `ItemStructural`, `OutputNonEmpty`.
+
+Generation runs **outside** the Braintrust event loop to avoid nested `asyncio.run()` conflicts (documented in `evals/item_generation/README.md`).
+
+## Pilot quantitative results ($N = 2$)
+
+**No baseline models** are included; the table reports **our system only** on the shipped dataset after a successful local run (0 errors).
+
+| Scorer | Mean | Min | Max | $N$ |
+|--------|-----:|----:|----:|----:|
+| NoRunError | 100% | 1.00 | 1.00 | 2 |
+| FeasibilityAlign | 100% | 1.00 | 1.00 | 2 |
+| OutputNonEmpty | 100% | 1.00 | 1.00 | 2 |
+| FoundationCoverage | 100% | 1.00 | 1.00 | 2 |
+| ProblemPromptShape | 100% | 1.00 | 1.00 | 2 |
+| AnswerLength | 100% | 1.00 | 1.00 | 2 |
+| BodyLengthBand | 100% | 1.00 | 1.00 | 2 |
+| ProxyTokenEfficiency | 100% | 1.00 | 1.00 | 2 |
+| RubricSatisfaction (LLM judge) | 91% | 0.82 | 1.00 | 2 |
+| Latency (band score) | 87.5% | 0.75 | 1.00 | 2 |
+| ItemStructural | 85% | 0.70 | 1.00 | 2 |
+| ItemClarity (LLM judge) | 69% | 0.38 | 1.00 | 2 |
+| MarkdownStructure | 46% | 0.35 | 0.57 | 2 |
+
+**Statistical rigor:** with two cases, confidence intervals are wide and unreported; means are **descriptive only**. For venue submission, authors should add stratified sampling, bootstrap CIs, and human ratings independent of LLM judges. Per-concept evaluator and sample-evaluator scorers are **not yet** reflected in this table (see Section 8).
+
+# 5. Models and technology
+
+## LLMs and embeddings
+
+- **Chat models** — selected via `ITEM_GENERATION_PROVIDER` and related settings (`app/config.py`); judges may use a separate OpenAI-compatible endpoint. Pinned model versions should be recorded in an appendix for reproducibility (currently environment-dependent). The provider abstraction (`app/ai/providers/`) accepts either a plain string or a **multipart list** of text + `image_url` blocks as the user message, so the sample evaluator and generator paths forward learner-attached images natively to OpenAI and Anthropic [@anthropic] vision endpoints; Groq [@groq] returns text-only JSON and strips images with a warning rather than failing the request.
+- **Embeddings** — OpenAI embedding model constants in `app/ai/providers/openai_embeddings.py` for concept and document-chunk vectors.
+
+## Frameworks
+
+Orchestration is **custom Python** (async FastAPI services and pipelines), not LangChain or LlamaIndex in the critical path. Braintrust [@braintrust] wraps offline evaluation. The Obsidian [@obsidian] plugin uses native `requestUrl` patterns and a bundled esbuild build.
+
+## Infrastructure
+
+Pinecone [@pinecone] is optional and degrades gracefully (HTTP 503) when unset. No persistent backend database is required to run the plugin — all plugin-visible durable state lives in the Obsidian vault as markdown.
+
+## Rationale
+
+Custom pipelines preserve transparent control flow for research: bounded loops, explicit feasibility outcomes, typed Pydantic schemas, and a single well-defined place where each agent is invoked. A thin Obsidian [@obsidian] client keeps learner data in the vault while still enabling server-side GPU-heavy extraction (MinerU) and cloud vectors when desired.
+
+# 6. Responsible AI considerations
+
+**Bias and fairness.** Items reflect user-provided notes; demographic skew in sources propagates to questions. The plugin does not perform standalone fairness auditing; reviewers should check outputs especially under `generate_with_review`.
+
+**Hallucination and factual accuracy.** Feasibility routing declines some high-risk combinations; actor–reflector loops and the post-hoc foundation validator reduce incoherent items but do **not** guarantee mathematical correctness.
+
+**Privacy.** Raw notes stay in the vault. Enabling cloud embeddings, cloud LLMs, or Braintrust traces sends derived representations (and possibly prompts) to third parties — users must opt in with clear data-flow disclosure. The multimodal sample evaluator introduces a new exfiltration surface: photographed exam papers or figures are base64-encoded in the browser and forwarded to the configured vision provider. The plugin surfaces images in-session only (no vault persistence) and deduplicates identical payloads across evaluator and generator calls, but learners uploading exam materials should be aware that image bytes traverse the same trust boundary as text prompts.
+
+**Safety and ethics.** Answer grading and generation must not encourage academic misconduct; deployment policies (rate limits, logging, instructor-only generation) are deployment concerns not fully encoded in this POC.
+
+# 7. Results and discussion
+
+## Key insights
+
+1. **Structural gates track rubric intent.** Perfect `FoundationCoverage` and `ProblemPromptShape` on two cases show that explicit id instructions in `user_requirements` interact well with post-hoc checks.
+2. **Judges disagree with heuristics.** High rubric satisfaction (91%) coexists with low markdown-structure scores (46%), indicating that format-focused heuristics may need retuning or decomposition (headings vs. lists vs. code fences) rather than broad semantic failure.
+3. **Item clarity variance.** `ItemClarity` min 0.38 on two cases shows sensitivity to wording even when structure passes; larger $N$ is needed to separate noise from systematic failure modes.
+4. **Latency bands.** 87.5% average suggests wall-clock cost is acceptable for offline eval but must be re-measured per hardware and provider.
+
+## Unexpected challenges
+
+- **Identifier leakage.** Models emit concept *titles* instead of *ids* unless the prompt enumerates allowed strings; the dataset encodes this lesson explicitly.
+- **Async + eval frameworks.** Generation runs outside the Braintrust [@braintrust] event loop to avoid nested `asyncio.run()` conflicts.
+- **PDF ingestion with MinerU.** Despite strong layout-aware extraction relative to plain text dumps, PDFs remain a hard modality in practice: we repeatedly hit pipeline bugs and brittle corner cases (multi-column layouts, tightly packed figures and tables, uncommon fonts, low-quality scans) that produce missing sections, mis-ordered blocks, or failed runs until the user adjusts inputs, switches MinerU backends where supported, or manually repairs markdown in the vault.
+- **Provider multimodal skew.** OpenAI and Anthropic vision paths work with the same request shape; Groq's current JSON mode does not accept `image_url` blocks, so we strip images with a warning rather than error out — an inconsistency users should be aware of when swapping providers.
+
+## Trade-offs
+
+In-memory sessions simplify development but do not scale horizontally. Vector and LLM calls dominate cost; proxy token scoring is tiktoken-based, not billing-identical. Optional graph building adds one LLM call per paper at ingest. The per-concept evaluator adds a small latency cost over a scalar evaluator but removes the "wrong answer penalizes every concept in the foundation set" pathology we observed during early testing.
+
+## Post-pilot additions
+
+Three features landed **after** the $N{=}2$ eval above was frozen; they are in-repo, covered by unit tests (`tests/test_sample_analyzer.py`, `tests/test_answer_grader.py`, `tests/test_item_scheduler.py`), but **not** reflected in the quantitative table:
+
+1. **Per-concept verdicts.** The answer evaluator now returns a list of `ConceptVerdict` objects instead of a scalar, and the plugin runs an Elo-style update per concept. Anecdotally this removes the "wrong answer drops mastery for every concept in $F$" pathology, but a systematic comparison requires a larger labeled trajectory set.
+2. **Multimodal sample evaluator.** Drop a markdown file *or* an image of an exam problem into the sample panel; the plugin base64-encodes it, forwards it via vision endpoints, and renders an inline pedagogical summary. The same image is deduped into the generator's `context_images` so few-shot samples carry the figure itself, not a caption.
+3. **Depth-aware scheduling and coverage bar.** The link-architect's per-section depth is wired into a scheduler that auto-advances `focus_depth` when per-depth mastery clears threshold. The plugin renders coverage as a single dense row of concept cells ordered by depth; colors track the highest difficulty at which each concept has been exercised.
+
+# 8. Conclusion and future work
+
+## Contributions
+
+1. A shipped **Obsidian plugin + FastAPI backend** that generates study items from learner-selected concepts with structural quality gates.
+2. A **per-concept answer evaluator** emitting verdict types (`correct` / `alt_path` / `misunderstood` / `untested`) and an Elo-style mastery loop that promotes mastered concepts into integration items.
+3. A **multimodal sample evaluator** that pre-grades learner-supplied reference problems (markdown or photographs) and threads pedagogical feedback into the generator prompt.
+4. An **offline evaluation harness** and pilot numbers on two cases (descriptive).
+
+## Limitations
+
+Pilot $N{=}2$; no baseline comparisons; no human inter-annotator agreement; judge and chat model versions are environment-dependent rather than pinned in text. Session state is in-memory only; multi-user coordination and authentication are out of scope for this submission. MinerU ingest remains brittle on difficult PDFs. Groq's text-only JSON mode means multimodal features degrade silently when that provider is selected.
+
+## Future directions
+
+Expand `dataset.json` stratified by domain; add human instructional-quality ratings; log exact model ids and hardware; extend the offline harness with per-concept verdict and sample-evaluator scorers so the quantitative table reflects the post-pilot additions; add a Groq-compatible multimodal path (or a text-caption fallback) for smoother provider swaps; stress-test the ingest pipeline on a larger PDF corpus; add durable session persistence for longitudinal mastery tracking.
+
+```{=latex}
+\clearpage
+```
+
+## References
