@@ -1,0 +1,193 @@
+---
+title: ""
+format:
+  pdf:
+    documentclass: extarticle
+    fontsize: 20pt
+    classoption: [landscape]
+    geometry:
+      - paperwidth=46.81in
+      - paperheight=33.11in
+      - margin=0.55in
+    pdf-engine: pdflatex
+    include-in-header:
+      - text: |
+          \usepackage{multicol}
+          \usepackage{xcolor}
+          \usepackage{graphicx}
+          \usepackage{titlesec}
+          \usepackage{enumitem}
+          \usepackage{parskip}
+          \usepackage{tabularx}
+          \usepackage[scaled=0.92]{helvet}
+          \renewcommand{\familydefault}{\sfdefault}
+
+          \definecolor{ggblue}{HTML}{0B3061}
+          \definecolor{ggdeep}{HTML}{05203F}
+          \definecolor{gggold}{HTML}{8C6F2C}
+          \definecolor{soft}{HTML}{F1F5F9}
+          \definecolor{accent}{HTML}{1E3A8A}
+          \definecolor{ok}{HTML}{166534}
+
+          \pagestyle{empty}
+          \setlength{\parindent}{0pt}
+          \setlength{\parskip}{0.45em}
+          \setlength{\columnsep}{0.42in}
+          \setlength{\columnseprule}{0.4pt}
+          \setlist[itemize]{leftmargin=1.3em,topsep=2pt,itemsep=3pt,parsep=0pt}
+          \setlist[enumerate]{leftmargin=1.5em,topsep=2pt,itemsep=3pt,parsep=0pt}
+
+          \titleformat{\section}
+            {\Huge\bfseries\color{ggblue}}
+            {}{0em}{}
+            [\vspace{-0.35em}{\color{ggblue}\rule{\linewidth}{1.2pt}}]
+          \titlespacing*{\section}{0pt}{0.6em}{0.4em}
+          \titleformat{\subsection}
+            {\LARGE\bfseries\color{accent}}
+            {}{0em}{}
+          \titlespacing*{\subsection}{0pt}{0.6em}{0.2em}
+---
+
+\begin{center}
+\vspace*{-0.35in}
+{\fontsize{56}{64}\selectfont\bfseries\color{ggdeep} Grounded Study Item Generation from Personal Notes}
+
+\vspace{0.18in}
+
+{\fontsize{30}{36}\selectfont\color{accent} An Obsidian Plugin with a Multi-Agent Pipeline \& Per-Concept Evaluation}
+
+\vspace{0.15in}
+
+{\fontsize{22}{26}\selectfont\textbf{Chaowei Wang} \quad \textbf{Yubo Xing} \quad{\color{gggold}\textbf{|}}\quad Georgetown University, DSAN 6725 Spring 2026 \quad{\color{gggold}\textbf{|}}\quad \texttt{github.com/gu-dsan6725/spring-2026-final-project-team\_24}}
+\end{center}
+
+\vspace{0.05in}
+{\color{ggblue}\rule{\linewidth}{2.4pt}}
+\vspace{0.08in}
+
+\begin{multicols}{4}
+
+\section*{Problem}
+
+Personal note vaults (Obsidian, Notion, Logseq) accumulate \textbf{concept notes, PDFs, and figures}, but converting them into study items --- problems, flashcards, code challenges --- is manual, time-consuming, and error-prone.
+
+LLMs can draft items cheaply but routinely \textbf{drift} from the exact content the learner stored, breaking instructional trust. Grading drift is worse: a single scalar score punishes \emph{every concept} on a failed answer, including ones the student never even tried to use.
+
+\subsection*{Goal}
+
+Generate study items grounded in the \textbf{learner's own notes}, grade them at the \textbf{concept level}, and never move raw notes outside the vault.
+
+\section*{Approach}
+
+The vault is the source of truth. A TypeScript plugin sends curated JSON views of selected concepts to a FastAPI service that runs a multi-agent loop under tool-calling (Anthropic Claude Haiku 4.5). Outputs are written back to the same vault as markdown.
+
+\begin{itemize}
+  \item \textbf{Sample Evaluator} pre-grades a learner-supplied reference --- markdown \emph{or} an image of an exam clip --- and threads pedagogical notes into the Generator.
+  \item \textbf{Core hardening loop} (Generator $\to$ Actor $\to$ Reflector) refines items until they survive simulated solving; a back-edge re-emits when difficulty $\geq$ hard.
+  \item \textbf{Answer Evaluator} returns per-concept verdicts: \texttt{correct}, \texttt{alt\_path}, \texttt{misunderstood}, \texttt{untested}.
+  \item \textbf{Mastery + depth-aware scheduler}: per-concept Elo updates; mastered concepts graduate to integration items; \texttt{focus\_depth} advances along a topological ordering produced by a link-architect over ingested PDF sections.
+\end{itemize}
+
+\columnbreak
+
+\section*{System Architecture}
+
+\begin{center}
+\includegraphics[width=0.95\linewidth,height=4.6in,keepaspectratio]{figures/screen-foundation.png}\\[2pt]
+\small\itshape Vault concepts surfaced via folder upload --- a single paper PDF expands into 21 section notes, all auto-deduplicated.
+\end{center}
+
+\subsection*{Two feedback cycles}
+
+\textbf{1. Sample item evaluation} (pre-round)
+\[
+\text{Sample (md / image)} \;\rightarrow\; \text{Sample Evaluator} \;\dashrightarrow\; \texttt{analysis\_notes} \;\rightarrow\; \text{Generator}
+\]
+
+\textbf{2. Core hardening loop} (during round)
+\[
+\text{Generator} \;\rightarrow\; \text{Actor}{\times}3 \;\rightarrow\; \text{Reflector} \;\dashrightarrow\; \text{(if hard+)} \;\rightarrow\; \text{Generator}
+\]
+
+Solid arrows are data flow, dashed arrows are feedback that conditions the \emph{next} round. The Answer Evaluator (post-reply) closes a third loop on per-concept mastery and \texttt{focus\_depth}.
+
+\subsection*{Why per-concept verdicts}
+
+Most LLM evaluators emit a scalar. We emit a \textbf{list of \texttt{ConceptVerdict} objects} so an alternate solution path still credits the concept it exercised, and a wrong answer never penalizes concepts the learner did not touch --- directly feeding the Elo update.
+
+\begin{center}
+\includegraphics[width=0.6\linewidth,height=8in,keepaspectratio]{figures/screen-options.png}\\[2pt]
+\small\itshape Generation options surfaced in the side panel: type, difficulty, items per round, free-text user requirements.
+\end{center}
+
+\columnbreak
+
+\section*{Plugin in Action}
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/screen-graph-view.png}\\[2pt]
+\small\itshape Obsidian global graph view --- each concept becomes a node; the Item Generator panel reads selected sources directly from the vault.
+\end{center}
+
+\vspace{0.15in}
+
+\begin{center}
+\includegraphics[width=\linewidth]{figures/screen-item-rendered.png}\\[2pt]
+\small\itshape A generated \emph{very\_hard} problem combining Bayes' theorem with sequential testing under time-degrading sensitivity. \LaTeX{} renders inline; the Session panel tracks rounds and exposes ``Grade My Answers'' / ``Next Round'' controls.
+\end{center}
+
+\vspace{0.1in}
+
+\begin{center}
+\includegraphics[width=0.45\linewidth,height=8.5in,keepaspectratio]{figures/screen-coverage.png}\\[2pt]
+\small\itshape Concept coverage row --- each cell is one concept, colored by the highest difficulty at which it has been exercised; tick marks delineate dependency depths and the bolder tick marks \texttt{focus\_depth}.
+\end{center}
+
+\columnbreak
+
+\section*{Pilot Evaluation \,(N=2)}
+
+Offline evaluation over the shipped \texttt{dataset.json} via the Braintrust harness:
+
+\begin{itemize}
+  \item \textbf{\color{ok}91\%} rubric satisfaction
+  \item \textbf{\color{ok}69\%} item clarity (LLM judge)
+  \item \textbf{\color{ok}85\%} structural validity
+  \item \textbf{\color{ok}87.5\%} latency band
+  \item \textbf{\color{ok}100\%} foundation coverage, prompt-shape, token-efficiency heuristics
+  \item All cases completed without runtime errors
+\end{itemize}
+
+With $N{=}2$ these numbers \textbf{characterize the harness}, not a benchmark; no baselines reported. CIs are wide and unreported; means are descriptive only.
+
+\section*{Post-pilot additions}
+
+Three features landed \emph{after} the eval above was frozen --- covered by unit tests but not yet in the quantitative table:
+
+\begin{enumerate}
+  \item Per-concept \textbf{Answer Evaluator} + Elo mastery loop.
+  \item Multimodal \textbf{Sample Evaluator} (markdown or exam-clip image).
+  \item Depth-aware \textbf{scheduler} + concept coverage visualization.
+\end{enumerate}
+
+\section*{Responsible AI}
+
+Raw notes stay in the vault. Cloud LLM and embedding calls are opt-in. The multimodal sample evaluator base64-encodes images in the browser before forwarding --- a new exfiltration surface that is surfaced in-session only and deduplicated across evaluator and generator calls.
+
+\section*{Limitations \& Future Work}
+
+\begin{itemize}
+  \item In-memory sessions; not durable across restarts.
+  \item Groq path is text-only; sample images stripped with a warning.
+  \item MinerU PDF ingest brittle on multi-column layouts and low-quality scans.
+  \item \textbf{Future:} stratified eval, human ratings, durable mastery storage, Groq multimodal, larger labeled trajectory set for the Answer Evaluator.
+\end{itemize}
+
+\end{multicols}
+
+\vspace{0.05in}
+{\color{ggblue}\rule{\linewidth}{1pt}}
+\vspace{0.05in}
+\begin{center}
+{\large\itshape Code, paper, slides, and tests:\;\texttt{github.com/gu-dsan6725/spring-2026-final-project-team\_24} \quad{\color{gggold}\textbf{|}}\quad DSAN 6725 --- Applied GenAI for AI Developers --- Spring 2026}
+\end{center}
