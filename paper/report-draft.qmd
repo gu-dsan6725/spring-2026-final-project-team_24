@@ -12,6 +12,7 @@ bibliography: references.bib
 link-citations: true
 format:
   pdf:
+    output-file: report
     documentclass: article
     papersize: letter
     fontsize: 11pt

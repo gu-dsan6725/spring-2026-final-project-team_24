@@ -4,10 +4,20 @@ The conference-format paper (8-12 pages excluding references).
 
 ## Expected artifacts
 
-- `paper.pdf` — final rendered paper.
-- `paper.qmd` or `paper.tex` — source.
-- `figures/` — generated diagrams, screenshots, plots.
-- `bib/references.bib` — citations (see also `../backend/references/`).
+- `report.pdf` — final rendered paper (the submission artifact).
+- `report-draft.qmd` — Quarto source.
+- `references.bib` — citations (see also `../backend/references/`).
+- `figures/` — generated diagrams, screenshots, plots (created by the renderer when needed).
+
+## Re-render
+
+```bash
+cd submission/team_24/paper
+quarto render report-draft.qmd --to pdf
+```
+
+Quarto's `output-file: report` directive in the YAML header produces
+`report.pdf` directly (so the source-vs-final names are stable).
 
 ## Outline (per `deliverables.md`)
 
