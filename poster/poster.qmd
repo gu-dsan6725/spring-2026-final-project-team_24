@@ -6,10 +6,10 @@ format:
     fontsize: 20pt
     classoption: [landscape]
     geometry:
-      - paperwidth=46.81in
-      - paperheight=33.11in
+      - paperwidth=48in
+      - paperheight=36in
       - margin=0.55in
-    pdf-engine: pdflatex
+    pdf-engine: lualatex
     include-in-header:
       - text: |
           \usepackage{multicol}
@@ -19,6 +19,11 @@ format:
           \usepackage{enumitem}
           \usepackage{parskip}
           \usepackage{tabularx}
+          \usepackage{booktabs}
+          \usepackage{array}
+          \usepackage{tikz}
+          \usetikzlibrary{arrows.meta,positioning,calc}
+          \usepackage{qrcode}
           \usepackage[scaled=0.92]{helvet}
           \renewcommand{\familydefault}{\sfdefault}
 
@@ -28,6 +33,7 @@ format:
           \definecolor{soft}{HTML}{F1F5F9}
           \definecolor{accent}{HTML}{1E3A8A}
           \definecolor{ok}{HTML}{166534}
+          \definecolor{rowalt}{HTML}{F3F6FB}
 
           \pagestyle{empty}
           \setlength{\parindent}{0pt}
@@ -48,18 +54,29 @@ format:
           \titlespacing*{\subsection}{0pt}{0.6em}{0.2em}
 ---
 
-\begin{center}
-\vspace*{-0.35in}
-{\fontsize{56}{64}\selectfont\bfseries\color{ggdeep} Grounded Study Item Generation from Personal Notes}
+\noindent
+\begin{minipage}[c]{0.78\linewidth}
+\vspace*{-0.2in}
+{\fontsize{56}{64}\selectfont\bfseries\color{ggdeep} Grounded Study Item Generation\\from Personal Notes}
 
-\vspace{0.18in}
+\vspace{0.12in}
 
 {\fontsize{30}{36}\selectfont\color{accent} An Obsidian Plugin with a Multi-Agent Pipeline \& Per-Concept Evaluation}
 
-\vspace{0.15in}
+\vspace{0.14in}
 
-{\fontsize{22}{26}\selectfont\textbf{Chaowei Wang} \quad \textbf{Yubo Xing} \quad{\color{gggold}\textbf{|}}\quad Georgetown University, DSAN 6725 Spring 2026 \quad{\color{gggold}\textbf{|}}\quad \texttt{github.com/gu-dsan6725/spring-2026-final-project-team\_24}}
-\end{center}
+{\fontsize{22}{26}\selectfont\textbf{Chaowei Wang} \quad \textbf{Yubo Xing} \quad{\color{gggold}\textbf{|}}\quad Georgetown University, DSAN 6725 --- Applied GenAI for AI Developers, Spring 2026}
+\end{minipage}\hfill
+\begin{minipage}[c]{0.20\linewidth}
+\centering
+\fcolorbox{ggblue}{white}{\begin{minipage}{0.94\linewidth}\centering
+\vspace{4pt}
+\qrcode[height=2.4in]{https://github.com/gu-dsan6725/spring-2026-final-project-team_24}\\[4pt]
+{\large\bfseries\color{ggblue}Code, paper, slides}\\
+{\small\texttt{gu-dsan6725 / team\_24}}
+\vspace{4pt}
+\end{minipage}}
+\end{minipage}
 
 \vspace{0.05in}
 {\color{ggblue}\rule{\linewidth}{2.4pt}}
@@ -69,9 +86,9 @@ format:
 
 \section*{Problem}
 
-Personal note vaults (Obsidian, Notion, Logseq) accumulate \textbf{concept notes, PDFs, and figures}, but converting them into study items --- problems, flashcards, code challenges --- is manual, time-consuming, and error-prone.
+Personal note vaults (Obsidian, Notion, Logseq) accumulate \textbf{concept notes, PDFs, and figures}, but turning them into study items --- problems, flashcards, code challenges --- is manual, time-consuming, and error-prone.
 
-LLMs can draft items cheaply but routinely \textbf{drift} from the exact content the learner stored, breaking instructional trust. Grading drift is worse: a single scalar score punishes \emph{every concept} on a failed answer, including ones the student never even tried to use.
+LLMs draft items cheaply but routinely \textbf{drift} from the exact content the learner stored, breaking instructional trust. Grading drift is worse: a single scalar score punishes \emph{every concept} on a failed answer, including ones the student never even tried to use.
 
 \subsection*{Goal}
 
@@ -79,45 +96,103 @@ Generate study items grounded in the \textbf{learner's own notes}, grade them at
 
 \section*{Approach}
 
-The vault is the source of truth. A TypeScript plugin sends curated JSON views of selected concepts to a FastAPI service that runs a multi-agent loop under tool-calling (Anthropic Claude Haiku 4.5). Outputs are written back to the same vault as markdown.
+The vault is the source of truth. A TypeScript plugin sends curated JSON views of selected concepts to a FastAPI service that runs a multi-agent loop under tool-calling (Anthropic Claude Haiku 4.5). All outputs are written back to the same vault as markdown.
 
 \begin{itemize}
-  \item \textbf{Sample Evaluator} pre-grades a learner-supplied reference --- markdown \emph{or} an image of an exam clip --- and threads pedagogical notes into the Generator.
+  \item \textbf{Sample Evaluator} pre-grades a learner-supplied reference --- markdown \emph{or} an image of an exam clip --- and threads pedagogical \texttt{analysis\_notes} into the Generator.
   \item \textbf{Core hardening loop} (Generator $\to$ Actor $\to$ Reflector) refines items until they survive simulated solving; a back-edge re-emits when difficulty $\geq$ hard.
   \item \textbf{Answer Evaluator} returns per-concept verdicts: \texttt{correct}, \texttt{alt\_path}, \texttt{misunderstood}, \texttt{untested}.
-  \item \textbf{Mastery + depth-aware scheduler}: per-concept Elo updates; mastered concepts graduate to integration items; \texttt{focus\_depth} advances along a topological ordering produced by a link-architect over ingested PDF sections.
+  \item \textbf{Mastery + depth-aware scheduler}: per-concept Elo updates; mastered concepts graduate to integration items; \texttt{focus\_depth} advances along a topological ordering produced by a link-architect over MinerU-extracted PDF sections.
 \end{itemize}
+
+\subsection*{Why per-concept verdicts}
+
+Most LLM evaluators emit a scalar. We emit a \textbf{list of \texttt{ConceptVerdict} objects} so an alternate solution path still credits the concept it exercised, and a wrong answer never penalizes concepts the learner did not touch --- directly feeding the Elo update and the difficulty progression.
 
 \columnbreak
 
 \section*{System Architecture}
 
 \begin{center}
-\includegraphics[width=0.95\linewidth,height=4.6in,keepaspectratio]{figures/screen-foundation.png}\\[2pt]
-\small\itshape Vault concepts surfaced via folder upload --- a single paper PDF expands into 21 section notes, all auto-deduplicated.
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize,
+  >=Latex,
+  arr/.style={->, thick},
+  lbl/.style={inner sep=1pt, fill=white, pos=0.45},
+  box/.style={draw, rounded corners, align=center, inner sep=5pt, minimum width=2.6cm},
+  small/.style={draw, rounded corners, align=center, inner sep=3pt, minimum width=2.05cm, minimum height=7mm},
+  agent/.style={draw, rounded corners, align=center, inner sep=2pt, minimum height=6mm, minimum width=1.45cm}
+]
+  \node[box, minimum width=3.2cm] (vault) {Obsidian vault\\(notes, PDFs)};
+  \node[box, below=8mm of vault] (plugin) {Obsidian plugin\\(TypeScript)};
+  \node[box, right=24mm of plugin] (api) {FastAPI\\backend};
+  \draw[arr] (vault) -- (plugin);
+  \draw[arr] (plugin) -- node[lbl, above] {\texttt{HTTP}} (api);
+
+  \node[small, anchor=north] (ex) at ($(api.south)+(-3.4,-4mm-0.85)$) {Extraction /\\paper ingest};
+  \node[small, anchor=north] (vec) at ($(api.south)+(0,-4mm-0.85)$) {Vectors\\(index / search)};
+  \node[small, anchor=north] (sess) at ($(api.south)+(3.4,-4mm-0.85)$) {Item session};
+  \draw[arr, shorten >=2.5pt] (api.south) -| (ex.north);
+  \draw[arr, shorten >=2.5pt] (api.south) -- (vec.north);
+  \draw[arr, shorten >=2.5pt] (api.south) -| (sess.north);
+
+  \node[small, below=7mm of ex] (mineru) {MinerU};
+  \node[small, below=7mm of vec] (pine) {Pinecone};
+  \draw[arr] (ex) -- node[right, xshift=1mm] {\tiny extract} (mineru);
+  \draw[arr] (vec) -- node[right, xshift=1mm] {\tiny index} (pine);
+
+  \node[agent, below=14mm of sess] (F) {Feasibility};
+  \node[agent, right=2mm of F] (G) {Generator};
+  \node[agent, right=2mm of G] (A) {Actors};
+  \node[agent, right=2mm of A] (R) {Reflector};
+  \node[agent, right=2mm of R] (Gr) {Round\\evaluator};
+  \foreach \a/\b in {F/G, G/A, A/R, R/Gr}
+    \draw[arr] (\a.east) -- (\b.west);
+  \node[above=1pt of R, font=\tiny] {$\pm$ hardening};
+  \draw[arr, shorten >=2pt] (sess.south) -- (F.north);
+
+  \node[agent, above=5mm of G, minimum width=1.7cm] (SA) {Sample\\evaluator};
+  \draw[arr, shorten >=1pt]
+    (sess.south east) .. controls +(0.6,-0.4) and +(0,0.6) .. (SA.north);
+  \draw[arr, shorten >=1pt]
+    (SA.south) -- node[lbl, right, font=\tiny] {analysis\_notes} (G.north);
+
+  \node[box, minimum width=2.2cm, below=12mm of G] (ag) {Answer evaluator\\(per-concept)};
+  \node[box, minimum width=2.0cm, left=16mm of ag] (user) {Learner\\(replies)};
+  \draw[arr, shorten <=1pt, shorten >=1pt]
+    ($(user.east)+(0,2.2mm)$) -- node[midway, above, font=\tiny, inner sep=1pt] {submit}
+    ($(ag.west)+(0,2.2mm)$);
+  \draw[arr, shorten <=1pt, shorten >=1pt]
+    ($(ag.west)+(0,-2.2mm)$) -- node[midway, below, font=\tiny, inner sep=1pt] {verdicts}
+    ($(user.east)+(0,-2.2mm)$);
+
+  \draw[arr, shorten <=1pt, shorten >=1pt]
+    (ag.east) .. controls +(1.0,0) and +(0.4,-1.6) .. (sess.south)
+    node[pos=0.55, right, font=\tiny, inner sep=1pt] {mastery + focus\_depth};
+\end{tikzpicture}}\\[3pt]
+{\small\itshape Vault $\to$ plugin $\to$ FastAPI; multimodal \emph{Sample Evaluator} pre-grades references into \texttt{analysis\_notes}; the staged generation loop hardens items; per-concept \emph{Answer Evaluator} verdicts feed mastery + depth-aware scheduling back into the next round.}
 \end{center}
 
-\subsection*{Two feedback cycles}
+\subsection*{Agent roles}
 
-\textbf{1. Sample item evaluation} (pre-round)
-\[
-\text{Sample (md / image)} \;\rightarrow\; \text{Sample Evaluator} \;\dashrightarrow\; \texttt{analysis\_notes} \;\rightarrow\; \text{Generator}
-\]
-
-\textbf{2. Core hardening loop} (during round)
-\[
-\text{Generator} \;\rightarrow\; \text{Actor}{\times}3 \;\rightarrow\; \text{Reflector} \;\dashrightarrow\; \text{(if hard+)} \;\rightarrow\; \text{Generator}
-\]
-
-Solid arrows are data flow, dashed arrows are feedback that conditions the \emph{next} round. The Answer Evaluator (post-reply) closes a third loop on per-concept mastery and \texttt{focus\_depth}.
-
-\subsection*{Why per-concept verdicts}
-
-Most LLM evaluators emit a scalar. We emit a \textbf{list of \texttt{ConceptVerdict} objects} so an alternate solution path still credits the concept it exercised, and a wrong answer never penalizes concepts the learner did not touch --- directly feeding the Elo update.
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\linewidth}{@{}>{\bfseries\color{ggblue}}l X@{}}
+\toprule
+Feasibility & Routes a request to \texttt{abandon} / \texttt{review} / \texttt{generate}. \\
+Generator & Tool-calling JSON; outputs validated against declared concepts. \\
+Actors$\times$3 & Simulate solving to surface failure modes. \\
+Reflector & Quality score + bounded refinement; hardening directives. \\
+Round eval & Per-round summary; supports difficulty progression. \\
+Sample eval & Pre-grades md/image reference $\to$ \texttt{analysis\_notes}. \\
+Answer eval & Per-concept verdicts $\to$ Elo mastery. \\
+Link-architect & Topological depth over PDF sections (ingest). \\
+\bottomrule
+\end{tabularx}
 
 \begin{center}
-\includegraphics[width=0.6\linewidth,height=8in,keepaspectratio]{figures/screen-options.png}\\[2pt]
-\small\itshape Generation options surfaced in the side panel: type, difficulty, items per round, free-text user requirements.
+\includegraphics[width=0.95\linewidth,height=3.6in,keepaspectratio]{figures/screen-foundation.png}\\[1pt]
+{\small\itshape One paper PDF $\to$ 21 section concepts, deduplicated.}
 \end{center}
 
 \columnbreak
@@ -126,43 +201,56 @@ Most LLM evaluators emit a scalar. We emit a \textbf{list of \texttt{ConceptVerd
 
 \begin{center}
 \includegraphics[width=\linewidth]{figures/screen-graph-view.png}\\[2pt]
-\small\itshape Obsidian global graph view --- each concept becomes a node; the Item Generator panel reads selected sources directly from the vault.
+{\small\itshape Obsidian global graph view --- each concept becomes a node; the Item Generator panel reads selected sources directly from the vault.}
 \end{center}
 
-\vspace{0.15in}
+\vspace{0.12in}
 
 \begin{center}
 \includegraphics[width=\linewidth]{figures/screen-item-rendered.png}\\[2pt]
-\small\itshape A generated \emph{very\_hard} problem combining Bayes' theorem with sequential testing under time-degrading sensitivity. \LaTeX{} renders inline; the Session panel tracks rounds and exposes ``Grade My Answers'' / ``Next Round'' controls.
+{\small\itshape A generated \emph{very\_hard} problem combining Bayes' theorem with sequential testing under time-degrading sensitivity. \LaTeX{} renders inline; the Session panel tracks rounds and exposes ``Grade My Answers'' / ``Next Round'' controls.}
 \end{center}
 
 \vspace{0.1in}
 
 \begin{center}
-\includegraphics[width=0.45\linewidth,height=8.5in,keepaspectratio]{figures/screen-coverage.png}\\[2pt]
-\small\itshape Concept coverage row --- each cell is one concept, colored by the highest difficulty at which it has been exercised; tick marks delineate dependency depths and the bolder tick marks \texttt{focus\_depth}.
+\includegraphics[width=0.45\linewidth,height=8in,keepaspectratio]{figures/screen-coverage.png}\hspace{0.2in}\includegraphics[width=0.45\linewidth,height=8in,keepaspectratio]{figures/screen-options.png}\\[2pt]
+{\small\itshape Left: concept coverage row --- each cell is one concept colored by highest difficulty exercised; tick marks delineate dependency depths and the bolder tick marks \texttt{focus\_depth}. \quad Right: generation options panel.}
 \end{center}
 
 \columnbreak
 
 \section*{Pilot Evaluation \,(N=2)}
 
-Offline evaluation over the shipped \texttt{dataset.json} via the Braintrust harness:
+Offline harness over the shipped \texttt{dataset.json} via Braintrust. \textbf{No baselines}; our system only.
 
-\begin{itemize}
-  \item \textbf{\color{ok}91\%} rubric satisfaction
-  \item \textbf{\color{ok}69\%} item clarity (LLM judge)
-  \item \textbf{\color{ok}85\%} structural validity
-  \item \textbf{\color{ok}87.5\%} latency band
-  \item \textbf{\color{ok}100\%} foundation coverage, prompt-shape, token-efficiency heuristics
-  \item All cases completed without runtime errors
-\end{itemize}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\linewidth}{@{}X r r r@{}}
+\toprule
+\textbf{Scorer} & \textbf{Mean} & \textbf{Min} & \textbf{Max} \\
+\midrule
+NoRunError                       & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+FeasibilityAlign                 & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+OutputNonEmpty                   & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+FoundationCoverage               & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+ProblemPromptShape               & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+AnswerLength                     & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+BodyLengthBand                   & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+ProxyTokenEfficiency             & \color{ok}\textbf{100\%} & 1.00 & 1.00 \\
+RubricSatisfaction (LLM judge)   & \color{ok}\textbf{91\%}  & 0.82 & 1.00 \\
+Latency (band score)             & \color{ok}\textbf{87.5\%}& 0.75 & 1.00 \\
+ItemStructural                   & \color{ok}\textbf{85\%}  & 0.70 & 1.00 \\
+ItemClarity (LLM judge)          & 69\%                     & 0.38 & 1.00 \\
+MarkdownStructure                & 46\%                     & 0.35 & 0.57 \\
+\bottomrule
+\end{tabularx}
 
-With $N{=}2$ these numbers \textbf{characterize the harness}, not a benchmark; no baselines reported. CIs are wide and unreported; means are descriptive only.
+\vspace{2pt}
+{\small\itshape With $N{=}2$ these numbers \textbf{characterize the harness}, not a benchmark; CIs are wide and unreported, means are descriptive only.}
 
 \section*{Post-pilot additions}
 
-Three features landed \emph{after} the eval above was frozen --- covered by unit tests but not yet in the quantitative table:
+Three features landed \emph{after} the eval was frozen --- covered by unit tests but not yet in the table:
 
 \begin{enumerate}
   \item Per-concept \textbf{Answer Evaluator} + Elo mastery loop.
@@ -172,7 +260,7 @@ Three features landed \emph{after} the eval above was frozen --- covered by unit
 
 \section*{Responsible AI}
 
-Raw notes stay in the vault. Cloud LLM and embedding calls are opt-in. The multimodal sample evaluator base64-encodes images in the browser before forwarding --- a new exfiltration surface that is surfaced in-session only and deduplicated across evaluator and generator calls.
+Raw notes stay in the vault. Cloud LLM and embedding calls are opt-in. The multimodal sample evaluator base64-encodes images in the browser before forwarding --- a new exfiltration surface that is surfaced in-session only and deduplicated across evaluator and generator calls. Per-concept verdicts also reduce a known grading-drift failure mode where a single scalar score punishes concepts the learner never even attempted.
 
 \section*{Limitations \& Future Work}
 
@@ -189,5 +277,5 @@ Raw notes stay in the vault. Cloud LLM and embedding calls are opt-in. The multi
 {\color{ggblue}\rule{\linewidth}{1pt}}
 \vspace{0.05in}
 \begin{center}
-{\large\itshape Code, paper, slides, and tests:\;\texttt{github.com/gu-dsan6725/spring-2026-final-project-team\_24} \quad{\color{gggold}\textbf{|}}\quad DSAN 6725 --- Applied GenAI for AI Developers --- Spring 2026}
+{\large\itshape Code, paper, slides, and tests:\;\texttt{github.com/gu-dsan6725/spring-2026-final-project-team\_24} \quad{\color{gggold}\textbf{|}}\quad DSAN 6725 --- Applied GenAI for AI Developers --- Spring 2026 \quad{\color{gggold}\textbf{|}}\quad Scan QR (top right) for repo, paper PDF, slide deck, and demo video}
 \end{center}
