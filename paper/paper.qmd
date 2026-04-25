@@ -243,57 +243,6 @@ Generation runs **outside** the Braintrust event loop to avoid nested `asyncio.r
 
 **Statistical rigor:** with two cases, confidence intervals are wide and unreported; means are **descriptive only**. For venue submission, authors should add stratified sampling, bootstrap CIs, and human ratings independent of LLM judges. Per-concept evaluator and sample-evaluator scorers are **not yet** reflected in this table (see Section 8).
 
-## Benchmark feasibility against comparable systems
-
-Reviewers will reasonably ask: *given the comparable IG pipelines surveyed in Section 2, can our system be run head-to-head against any of their public benchmarks within a student budget?* We answer **yes, on a subset, at low single-digit dollars**, but **defer the actual run to a post-pilot iteration** for the engineering reasons below.
-
-**Per-item token cost** (measured via our `proxy_total_tokens` scorer over the existing pilot, then multiplied by the worst-case full-loop call count):
-
-\setlength{\tabcolsep}{6pt}
-\begin{center}
-\begin{tabular}{@{}lrr@{}}
-\toprule
-\textbf{Stage} & \textbf{Input} & \textbf{Output} \\
-\midrule
-Sample evaluator (optional, pre-round) & 3{,}000 & 500 \\
-Generator (1 item)                     & 4{,}500 & 1{,}200 \\
-Actors $\times 3$                      & 9{,}000 & 3{,}000 \\
-Reflector ($\leq 2$ refinement passes) & 5{,}500 & 1{,}200 \\
-Hardening retry (when difficulty $\geq$ hard) & 5{,}000 & 1{,}000 \\
-Round evaluator                        & 3{,}000 & 500 \\
-\midrule
-\textbf{Per-item full-loop total}      & \textbf{$\approx$30{,}000} & \textbf{$\approx$7{,}400} \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-**End-to-end run cost on a 200-item subset** (typical conference-replication slice; assumes one sample-evaluator pre-pass per item, one hardening retry, and a separate LLM-as-judge pass at $\approx$2{,}000 input + 500 output tokens per item; pricing as published April 2026):
-
-\setlength{\tabcolsep}{4pt}
-\begin{center}
-\begin{tabular}{@{}lrrrr@{}}
-\toprule
-\textbf{Provider} & \textbf{Input \$/MTok} & \textbf{Output \$/MTok} & \textbf{Per item} & \textbf{200 items} \\
-\midrule
-OpenAI \texttt{gpt-4o-mini}     & 0.15 & 0.60 & \$0.012 & \$2.40 \\
-Groq Llama-3.3-70B (versatile)  & 0.59 & 0.79 & \$0.024 & \$4.80 \\
-Anthropic Claude Haiku 4.5      & 1.00 & 5.00 & \$0.067 & \$13.40 \\
-OpenAI \texttt{gpt-4o}          & 2.50 & 10.00 & \$0.149 & \$29.80 \\
-Anthropic Claude Sonnet 4.5     & 3.00 & 15.00 & \$0.201 & \$40.20 \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-**Conclusion.** Running our pipeline on a 200-item subset of **EduQG** [@eduqg2023] or a stratified slice of **SciQ** [@sciq2017] is comfortably under \$15 with `gpt-4o-mini` or Llama-3.3-70B (Groq), and remains under \$50 even on Sonnet 4.5. A 1{,}000-item run scales linearly: $\approx$\$12 on `gpt-4o-mini`. This is *not* a budget question.
-
-**Why we still defer the run.** Three engineering items, not money, are the gating factor:
-
-1. **Per-concept verdict translation.** EduQG / SciQ / LearningQ ship item-level gold answers, not the per-concept trajectories our Answer Evaluator consumes; comparing our Generator branch against them is fair, but our distinctive Answer-Evaluator branch has no head-to-head target on these datasets (cf. Section 2). Future work needs either a synthetic-trajectory protocol or a small human-graded subset.
-2. **Adapter layer.** Our `evals/item_generation/dataset.json` is shaped around `concepts[].body_md`; running on EduQG requires a $\approx$100-line `eduqg_adapter.py` that maps each OpenStax passage to a single synthetic concept, copies the gold answer into `expected_output`, and re-routes our LLM-as-judge into a comparison against the gold MCQ stem and distractors. This is straightforward but unbuilt as of the pilot freeze.
-3. **Judge co-circularity.** Our shipped scorers use `gpt-4o`-class judges; EQGBench's protocol requires a multi-dimensional human rubric. Reporting numbers on EduQG without an independent human pass would re-introduce the LLM-as-judge concerns documented in Section 7.
-
-A faithful head-to-head run is therefore a planned post-pilot deliverable; the cost analysis above ensures the budget is not the blocker.
-
 # 5. Models and technology
 
 ## LLMs and embeddings
@@ -366,7 +315,7 @@ Pilot $N{=}2$; no baseline comparisons; no human inter-annotator agreement; judg
 
 ## Future directions
 
-Expand `dataset.json` stratified by domain; add human instructional-quality ratings; log exact model ids and hardware; extend the offline harness with per-concept verdict and sample-evaluator scorers so the quantitative table reflects the post-pilot additions; add a Groq-compatible multimodal path (or a text-caption fallback) for smoother provider swaps; stress-test the ingest pipeline on a larger PDF corpus; add durable session persistence for longitudinal mastery tracking. **Run the deferred head-to-head benchmark** described in Section 4 — a 200-item EduQG [@eduqg2023] subset and a stratified SciQ [@sciq2017] slice — once an EduQG-format adapter and a small human-graded validation set are in place; the budget analysis already shows this is feasible at well under \$15 on `gpt-4o-mini` and under \$50 on Sonnet 4.5.
+Expand `dataset.json` stratified by domain; add human instructional-quality ratings; log exact model ids and hardware; extend the offline harness with per-concept verdict and sample-evaluator scorers so the quantitative table reflects the post-pilot additions; add a Groq-compatible multimodal path (or a text-caption fallback) for smoother provider swaps; stress-test the ingest pipeline on a larger PDF corpus; add durable session persistence for longitudinal mastery tracking.
 
 ```{=latex}
 \clearpage
