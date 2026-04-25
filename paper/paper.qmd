@@ -118,6 +118,9 @@ Session state for item generation lives **in memory** on the backend (proof-of-c
   \node[agent, right=2mm of R] (Gr) {Round\\evaluator};
   \foreach \a/\b in {F/G, G/A, A/R, R/Gr}
     \draw[arr] (\a.east) -- (\b.west);
+  \draw[arr, dashed, shorten <=1pt, shorten >=1pt]
+    (R.south) .. controls +(0,-0.55) and +(0,-0.55) .. (G.south)
+    node[pos=0.5, below, font=\tiny, inner sep=1pt] {refine / harden};
   \node[above=1pt of R, font=\tiny] {$\pm$ hardening};
   \draw[arr, shorten >=2pt] (sess.south) -- (F.north);
 
