@@ -21,12 +21,10 @@ format:
 An **Obsidian plugin** backed by a **FastAPI server** that turns your
 personal notes into an AI-driven study system.
 
-::: {.incremental}
 - Write concepts as markdown notes in your vault
 - The plugin reads your knowledge graph (concepts + edges)
 - An LLM pipeline generates study items tailored to **your** knowledge
 - You answer, get graded, and progress through difficulty tiers
-:::
 
 ---
 
@@ -54,9 +52,7 @@ flowchart LR
     class Sample,Items data
 ```
 
-::: {.fragment .fade-in}
 *Per-concept Answer Evaluator (post-reply → Elo mastery + `focus_depth`) is detailed two slides on.*
-:::
 
 ---
 
@@ -78,11 +74,10 @@ Structured tool-calling (Anthropic Claude Haiku 4.5) — no free-text concatenat
 
 ---
 
-## Iterative Hardening (hard / very_hard / expert)
+## Iterative Hardening (hard / very_hard / expert) {.smaller}
 
 For difficulty ≥ **hard**, items go through up to 3 hardening iterations:
 
-::: {.incremental}
 1. Generate items at **medium** difficulty first
 2. **Actor** solves them — produces reasoning trajectories
 3. **Hardening Reflector** analyzes trajectories:
@@ -92,7 +87,6 @@ For difficulty ≥ **hard**, items go through up to 3 hardening iterations:
 4. Reflector also pulls **random extra concepts** from your graph
 5. **Generator** re-creates items with hardening directives
 6. Repeat — `item(i+1) = f(item(i))`, single-slot context (no accumulation)
-:::
 
 ---
 
@@ -115,45 +109,6 @@ flowchart LR
 - User **manually selects** difficulty — no forced auto-escalation
 - Hard+ triggers the iterative hardening loop above
 - Extra concepts from your knowledge graph make items harder but solvable
-
----
-
-## Plugin UI — Concept Import
-
-:::: {.columns}
-
-::: {.column width="50%"}
-### Adding Concepts
-
-- **Search bar** — fuzzy search vault notes
-- **Add Active Note** — one-click current note
-- **Import Active + Linked** — pulls wikilinked notes
-- **Import All Vault** — bulk load
-
-Each note's YAML frontmatter provides:
-
-```yaml
----
-mastery: 7
-edges:
-  - target: "Conditional Probability"
-    type: prerequisite
-    direction: directed
----
-```
-:::
-
-::: {.column width="50%"}
-### Managing Edges
-
-- Auto-populated from frontmatter
-- Manual add with type dropdown:
-  - prerequisite, derivation, application
-  - reference, contrast, analogy, custom
-- Direction: directed / undirected
-:::
-
-::::
 
 ---
 
@@ -267,11 +222,9 @@ The plugin reads your answers from markdown callouts and grades them:
 
 Misclicks happen — the "Next Round" button has a safety toggle:
 
-::: {.incremental}
 1. Click **"Next Round"** → button becomes **"Cancel Generation"**
 2. Click again → generation result is **discarded** client-side
 3. UI resets — no phantom items appended to your session note
-:::
 
 The backend request completes server-side (Obsidian API limitation),
 but the plugin ignores the response.
@@ -331,14 +284,12 @@ Enable the plugin in Obsidian Settings → Community Plugins.
 
 ## What's Next
 
-::: {.incremental}
 - **Concept CRUD** — full backend persistence (MongoDB)
 - **Embedding pipeline** — semantic search via Pinecone
 - **Graph visualization** — Cytoscape.js panel in Obsidian
 - **Traversal engine** — KST outer-fringe personalized paths
 - **Group landscapes** — merged canonical views across users
 - **Standalone web UI** — move beyond Obsidian for broader access
-:::
 
 ---
 

@@ -10,7 +10,7 @@
   <meta name="generator" content="quarto-1.8.27">
 
   <meta name="author" content="DSAN 6725 Team">
-  <meta name="dcterms.date" content="2026-04-24">
+  <meta name="dcterms.date" content="2026-04-28">
   <title>Knowledge Graph — Obsidian Plugin Demo</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -208,16 +208,16 @@ DSAN 6725 Team
 </div>
 </div>
 
-  <p class="date">2026-04-24</p>
+  <p class="date">2026-04-28</p>
 </section>
 <section id="what-we-built" class="slide level2 center">
 <h2>What We Built</h2>
 <p>An <strong>Obsidian plugin</strong> backed by a <strong>FastAPI server</strong> that turns your personal notes into an AI-driven study system.</p>
 <ul>
-<li class="fragment">Write concepts as markdown notes in your vault</li>
-<li class="fragment">The plugin reads your knowledge graph (concepts + edges)</li>
-<li class="fragment">An LLM pipeline generates study items tailored to <strong>your</strong> knowledge</li>
-<li class="fragment">You answer, get graded, and progress through difficulty tiers</li>
+<li>Write concepts as markdown notes in your vault</li>
+<li>The plugin reads your knowledge graph (concepts + edges)</li>
+<li>An LLM pipeline generates study items tailored to <strong>your</strong> knowledge</li>
+<li>You answer, get graded, and progress through difficulty tiers</li>
 </ul>
 </section>
 <section id="architecture-overview" class="slide level2 smaller">
@@ -249,9 +249,7 @@ DSAN 6725 Team
 </div>
 </div>
 </div>
-<div class="fragment fade-in">
 <p><em>Per-concept Answer Evaluator (post-reply → Elo mastery + <code>focus_depth</code>) is detailed two slides on.</em></p>
-</div>
 </section>
 <section id="the-generation-pipeline" class="slide level2 smaller">
 <h2>The Generation Pipeline</h2>
@@ -300,21 +298,21 @@ DSAN 6725 Team
 </table>
 <p>Structured tool-calling (Anthropic Claude Haiku 4.5) — no free-text concatenation.</p>
 </section>
-<section id="iterative-hardening-hard-very_hard-expert" class="slide level2">
+<section id="iterative-hardening-hard-very_hard-expert" class="slide level2 smaller">
 <h2>Iterative Hardening (hard / very_hard / expert)</h2>
 <p>For difficulty ≥ <strong>hard</strong>, items go through up to 3 hardening iterations:</p>
 <ol type="1">
-<li class="fragment">Generate items at <strong>medium</strong> difficulty first</li>
-<li class="fragment"><strong>Actor</strong> solves them — produces reasoning trajectories</li>
-<li class="fragment"><strong>Hardening Reflector</strong> analyzes trajectories:
+<li>Generate items at <strong>medium</strong> difficulty first</li>
+<li><strong>Actor</strong> solves them — produces reasoning trajectories</li>
+<li><strong>Hardening Reflector</strong> analyzes trajectories:
 <ul>
-<li class="fragment">“Actor solved trivially → add multi-step reasoning”</li>
-<li class="fragment">“High confidence → inject edge cases”</li>
-<li class="fragment">“Few concepts used → require cross-concept synthesis”</li>
+<li>“Actor solved trivially → add multi-step reasoning”</li>
+<li>“High confidence → inject edge cases”</li>
+<li>“Few concepts used → require cross-concept synthesis”</li>
 </ul></li>
-<li class="fragment">Reflector also pulls <strong>random extra concepts</strong> from your graph</li>
-<li class="fragment"><strong>Generator</strong> re-creates items with hardening directives</li>
-<li class="fragment">Repeat — <code>item(i+1) = f(item(i))</code>, single-slot context (no accumulation)</li>
+<li>Reflector also pulls <strong>random extra concepts</strong> from your graph</li>
+<li><strong>Generator</strong> re-creates items with hardening directives</li>
+<li>Repeat — <code>item(i+1) = f(item(i))</code>, single-slot context (no accumulation)</li>
 </ol>
 </section>
 <section id="five-difficulty-tiers" class="slide level2">
@@ -345,38 +343,6 @@ DSAN 6725 Team
 <li>Hard+ triggers the iterative hardening loop above</li>
 <li>Extra concepts from your knowledge graph make items harder but solvable</li>
 </ul>
-</section>
-<section id="plugin-ui-concept-import" class="slide level2">
-<h2>Plugin UI — Concept Import</h2>
-<div class="columns">
-<div class="column" style="width:50%;">
-<h3 id="adding-concepts">Adding Concepts</h3>
-<ul>
-<li><strong>Search bar</strong> — fuzzy search vault notes</li>
-<li><strong>Add Active Note</strong> — one-click current note</li>
-<li><strong>Import Active + Linked</strong> — pulls wikilinked notes</li>
-<li><strong>Import All Vault</strong> — bulk load</li>
-</ul>
-<p>Each note’s YAML frontmatter provides:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb1-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
-<span id="cb1-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">mastery</span><span class="kw">:</span><span class="at"> </span><span class="dv">7</span></span>
-<span id="cb1-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">edges</span><span class="kw">:</span></span>
-<span id="cb1-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="kw">-</span><span class="at"> </span><span class="fu">target</span><span class="kw">:</span><span class="at"> </span><span class="st">"Conditional Probability"</span></span>
-<span id="cb1-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">type</span><span class="kw">:</span><span class="at"> prerequisite</span></span>
-<span id="cb1-6"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">direction</span><span class="kw">:</span><span class="at"> directed</span></span>
-<span id="cb1-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div><div class="column" style="width:50%;">
-<h3 id="managing-edges">Managing Edges</h3>
-<ul>
-<li>Auto-populated from frontmatter</li>
-<li>Manual add with type dropdown:
-<ul>
-<li>prerequisite, derivation, application</li>
-<li>reference, contrast, analogy, custom</li>
-</ul></li>
-<li>Direction: directed / undirected</li>
-</ul>
-</div></div>
 </section>
 <section id="plugin-ui-context-images-pdf-upload" class="slide level2">
 <h2>Plugin UI — Context Images &amp; PDF Upload</h2>
@@ -460,16 +426,16 @@ DSAN 6725 Team
 <section id="answer-grading" class="slide level2">
 <h2>Answer Grading</h2>
 <p>The plugin reads your answers from markdown callouts and grades them:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb2-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Your Answer</span></span>
-<span id="cb2-2"><a href="" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!quote</span><span class="co">]</span><span class="at">- Write your answer here</span></span>
-<span id="cb2-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; P(A</span><span class="pp">|</span><span class="at">B) = P(B</span><span class="pp">|</span><span class="at">A) * P(A) / P(B)</span></span>
-<span id="cb2-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Using the law of total probability for the denominator...</span></span>
-<span id="cb2-6"><a href="" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Evaluator Feedback  ← injected by plugin</span></span>
-<span id="cb2-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!success</span><span class="co">]</span><span class="at"> Score: 8.5/10</span></span>
-<span id="cb2-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Strong application of Bayes' theorem.</span></span>
-<span id="cb2-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Consider explicitly stating the partition used in the denominator.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Your Answer</span></span>
+<span id="cb1-2"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!quote</span><span class="co">]</span><span class="at">- Write your answer here</span></span>
+<span id="cb1-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; P(A</span><span class="pp">|</span><span class="at">B) = P(B</span><span class="pp">|</span><span class="at">A) * P(A) / P(B)</span></span>
+<span id="cb1-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Using the law of total probability for the denominator...</span></span>
+<span id="cb1-6"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Evaluator Feedback  ← injected by plugin</span></span>
+<span id="cb1-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!success</span><span class="co">]</span><span class="at"> Score: 8.5/10</span></span>
+<span id="cb1-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Strong application of Bayes' theorem.</span></span>
+<span id="cb1-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Consider explicitly stating the partition used in the denominator.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>LLM compares your answer against the reference solution</li>
 <li>Feedback injected directly into the note</li>
@@ -480,26 +446,26 @@ DSAN 6725 Team
 <h2>Cancel Generation</h2>
 <p>Misclicks happen — the “Next Round” button has a safety toggle:</p>
 <ol type="1">
-<li class="fragment">Click <strong>“Next Round”</strong> → button becomes <strong>“Cancel Generation”</strong></li>
-<li class="fragment">Click again → generation result is <strong>discarded</strong> client-side</li>
-<li class="fragment">UI resets — no phantom items appended to your session note</li>
+<li>Click <strong>“Next Round”</strong> → button becomes <strong>“Cancel Generation”</strong></li>
+<li>Click again → generation result is <strong>discarded</strong> client-side</li>
+<li>UI resets — no phantom items appended to your session note</li>
 </ol>
 <p>The backend request completes server-side (Obsidian API limitation), but the plugin ignores the response.</p>
 </section>
 <section id="setup-for-your-team" class="slide level2 smaller">
 <h2>Setup for Your Team</h2>
 <h3 id="clone-install-backend">1. Clone &amp; install backend</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/chaowei312/finalproj-backend.git</span>
-<span id="cb3-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> finalproj-backend</span>
-<span id="cb3-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-r</span> requirements.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/chaowei312/finalproj-backend.git</span>
+<span id="cb2-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> finalproj-backend</span>
+<span id="cb2-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-r</span> requirements.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <h3 id="configure-.env-copy-from-.env.example">2. Configure <code>.env</code> (copy from <code>.env.example</code>)</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">ANTHROPIC_API_KEY</span><span class="op">=</span>sk-ant-...</span>
-<span id="cb4-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">ITEM_GENERATION_PROVIDER</span><span class="op">=</span>anthropic</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">ANTHROPIC_API_KEY</span><span class="op">=</span>sk-ant-...</span>
+<span id="cb3-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">ITEM_GENERATION_PROVIDER</span><span class="op">=</span>anthropic</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <h3 id="start-the-server">3. Start the server</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">uvicorn</span> app.main:app <span class="at">--reload</span> <span class="at">--port</span> 8000</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">uvicorn</span> app.main:app <span class="at">--reload</span> <span class="at">--port</span> 8000</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <h3 id="build-install-the-plugin">4. Build &amp; install the plugin</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> plugin</span>
-<span id="cb6-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="kw">&amp;&amp;</span> <span class="ex">npm</span> run build</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> plugin</span>
+<span id="cb5-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="kw">&amp;&amp;</span> <span class="ex">npm</span> run build</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Copy <code>plugin/main.js</code>, <code>plugin/manifest.json</code>, <code>plugin/styles.css</code> into your vault at <code>.obsidian/plugins/knowledge-graph/</code>.</p>
 <p>Enable the plugin in Obsidian Settings → Community Plugins.</p>
 </section>
@@ -547,12 +513,12 @@ DSAN 6725 Team
 <section id="whats-next" class="slide level2">
 <h2>What’s Next</h2>
 <ul>
-<li class="fragment"><strong>Concept CRUD</strong> — full backend persistence (MongoDB)</li>
-<li class="fragment"><strong>Embedding pipeline</strong> — semantic search via Pinecone</li>
-<li class="fragment"><strong>Graph visualization</strong> — Cytoscape.js panel in Obsidian</li>
-<li class="fragment"><strong>Traversal engine</strong> — KST outer-fringe personalized paths</li>
-<li class="fragment"><strong>Group landscapes</strong> — merged canonical views across users</li>
-<li class="fragment"><strong>Standalone web UI</strong> — move beyond Obsidian for broader access</li>
+<li><strong>Concept CRUD</strong> — full backend persistence (MongoDB)</li>
+<li><strong>Embedding pipeline</strong> — semantic search via Pinecone</li>
+<li><strong>Graph visualization</strong> — Cytoscape.js panel in Obsidian</li>
+<li><strong>Traversal engine</strong> — KST outer-fringe personalized paths</li>
+<li><strong>Group landscapes</strong> — merged canonical views across users</li>
+<li><strong>Standalone web UI</strong> — move beyond Obsidian for broader access</li>
 </ul>
 </section>
 <section id="demo-time" class="slide level2 center">
