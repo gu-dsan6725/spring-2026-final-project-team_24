@@ -148,8 +148,6 @@ Instantly turns any paper into a study-ready knowledge graph.
 
 ## Section Graph Builder (Link-Architect) {.smaller}
 
-Yubo's pipeline turns a MinerU-extracted paper into a typed directed graph that the depth-aware scheduler reads from. Adapted from his `karpathy_agents/` (`origin/yubo`) by keeping **only** the link-architect step.
-
 :::: {.columns}
 
 ::: {.column width="50%"}
