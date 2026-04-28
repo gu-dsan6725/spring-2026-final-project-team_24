@@ -221,8 +221,6 @@ The plugin reads your answers from markdown callouts and grades them:
 
 ## Offline Evaluation Harness (Braintrust) {.smaller}
 
-Yubo's `evals/item_generation/eval.py` ships alongside the code so any reviewer can re-run the pilot. **Generation runs outside the Braintrust event loop** to avoid nested `asyncio.run()` conflicts; `Eval()` only scores recorded outputs.
-
 :::: {.columns}
 
 ::: {.column width="50%"}

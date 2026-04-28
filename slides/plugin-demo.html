@@ -426,7 +426,6 @@ DSAN 6725 Team
 </section>
 <section id="offline-evaluation-harness-braintrust" class="slide level2 smaller">
 <h2>Offline Evaluation Harness (Braintrust)</h2>
-<p>Yubo’s <code>evals/item_generation/eval.py</code> ships alongside the code so any reviewer can re-run the pilot. <strong>Generation runs outside the Braintrust event loop</strong> to avoid nested <code>asyncio.run()</code> conflicts; <code>Eval()</code> only scores recorded outputs.</p>
 <div class="columns">
 <div class="column" style="width:50%;">
 <h3 id="scorer-families">Scorer families</h3>
