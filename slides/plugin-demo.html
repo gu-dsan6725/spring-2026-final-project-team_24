@@ -402,23 +402,6 @@ DSAN 6725 Team
 <li>Scores visible before choosing next round difficulty</li>
 </ul>
 </section>
-<section id="setup-for-your-team" class="slide level2 smaller">
-<h2>Setup for Your Team</h2>
-<h3 id="clone-install-backend">1. Clone &amp; install backend</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/chaowei312/finalproj-backend.git</span>
-<span id="cb2-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> finalproj-backend</span>
-<span id="cb2-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="at">-r</span> requirements.txt</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<h3 id="configure-.env-copy-from-.env.example">2. Configure <code>.env</code> (copy from <code>.env.example</code>)</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">ANTHROPIC_API_KEY</span><span class="op">=</span>sk-ant-...</span>
-<span id="cb3-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="va">ITEM_GENERATION_PROVIDER</span><span class="op">=</span>anthropic</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<h3 id="start-the-server">3. Start the server</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">uvicorn</span> app.main:app <span class="at">--reload</span> <span class="at">--port</span> 8000</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<h3 id="build-install-the-plugin">4. Build &amp; install the plugin</h3>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> plugin</span>
-<span id="cb5-2"><a href="" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install <span class="kw">&amp;&amp;</span> <span class="ex">npm</span> run build</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<p>Copy <code>plugin/main.js</code>, <code>plugin/manifest.json</code>, <code>plugin/styles.css</code> into your vault at <code>.obsidian/plugins/knowledge-graph/</code>.</p>
-<p>Enable the plugin in Obsidian Settings → Community Plugins.</p>
-</section>
 <section id="tech-stack" class="slide level2 smaller">
 <h2>Tech Stack</h2>
 <table class="caption-top">

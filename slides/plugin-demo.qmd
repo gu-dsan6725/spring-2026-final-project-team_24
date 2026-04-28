@@ -184,43 +184,6 @@ The plugin reads your answers from markdown callouts and grades them:
 
 ---
 
-## Setup for Your Team {.smaller}
-
-### 1. Clone & install backend
-
-```bash
-git clone https://github.com/chaowei312/finalproj-backend.git
-cd finalproj-backend
-pip install -r requirements.txt
-```
-
-### 2. Configure `.env` (copy from `.env.example`)
-
-```bash
-ANTHROPIC_API_KEY=sk-ant-...
-ITEM_GENERATION_PROVIDER=anthropic
-```
-
-### 3. Start the server
-
-```bash
-uvicorn app.main:app --reload --port 8000
-```
-
-### 4. Build & install the plugin
-
-```bash
-cd plugin
-npm install && npm run build
-```
-
-Copy `plugin/main.js`, `plugin/manifest.json`, `plugin/styles.css`
-into your vault at `.obsidian/plugins/knowledge-graph/`.
-
-Enable the plugin in Obsidian Settings → Community Plugins.
-
----
-
 ## Tech Stack {.smaller}
 
 | Layer | Technology |
