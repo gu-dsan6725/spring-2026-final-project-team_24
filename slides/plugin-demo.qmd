@@ -146,40 +146,6 @@ Instantly turns any paper into a study-ready knowledge graph.
 
 ---
 
-## Plugin UI — Session Flow {.smaller}
-
-```{mermaid}
-%%| fig-width: 10
-sequenceDiagram
-    participant U as User
-    participant P as Plugin
-    participant B as Backend
-    participant L as LLM Pipeline
-
-    U->>P: Select concepts, edges, difficulty
-    U->>P: Click "Generate Items"
-    P->>B: POST /api/v1/items/generate
-    B->>L: Generator → Actors → Reflector → Round Evaluator
-    L-->>B: RoundResult (items + solutions)
-    B-->>P: JSON response
-    P->>P: Create Items/session-*.md
-
-    Note over U: User writes answers in callouts
-
-    U->>P: Click "Grade My Answers"
-    P->>B: POST /api/v1/items/grade-answer
-    B-->>P: Feedback per answer
-    P->>P: Inject feedback into note
-
-    U->>P: Select difficulty, click "Next Round"
-    P->>B: POST /api/v1/items/continue-round
-    B->>L: (hardening if hard+)
-    L-->>B: New items
-    B-->>P: Append to session note
-```
-
----
-
 ## Session Resume & Sample Items {.smaller}
 
 ### Resume

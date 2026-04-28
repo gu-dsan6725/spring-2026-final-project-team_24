@@ -367,46 +367,6 @@ DSAN 6725 Team
 <p>Instantly turns any paper into a study-ready knowledge graph.</p>
 </div></div>
 </section>
-<section id="plugin-ui-session-flow" class="slide level2 smaller">
-<h2>Plugin UI — Session Flow</h2>
-<div class="cell" data-reveal="true" data-fig-width="10" data-layout-align="default">
-<div class="cell-output-display">
-<div>
-<p></p><figure class=""><p></p>
-<div>
-<pre class="mermaid mermaid-js">sequenceDiagram
-    participant U as User
-    participant P as Plugin
-    participant B as Backend
-    participant L as LLM Pipeline
-
-    U-&gt;&gt;P: Select concepts, edges, difficulty
-    U-&gt;&gt;P: Click "Generate Items"
-    P-&gt;&gt;B: POST /api/v1/items/generate
-    B-&gt;&gt;L: Generator → Actors → Reflector → Round Evaluator
-    L--&gt;&gt;B: RoundResult (items + solutions)
-    B--&gt;&gt;P: JSON response
-    P-&gt;&gt;P: Create Items/session-*.md
-
-    Note over U: User writes answers in callouts
-
-    U-&gt;&gt;P: Click "Grade My Answers"
-    P-&gt;&gt;B: POST /api/v1/items/grade-answer
-    B--&gt;&gt;P: Feedback per answer
-    P-&gt;&gt;P: Inject feedback into note
-
-    U-&gt;&gt;P: Select difficulty, click "Next Round"
-    P-&gt;&gt;B: POST /api/v1/items/continue-round
-    B-&gt;&gt;L: (hardening if hard+)
-    L--&gt;&gt;B: New items
-    B--&gt;&gt;P: Append to session note
-</pre>
-</div>
-<p></p></figure><p></p>
-</div>
-</div>
-</div>
-</section>
 <section id="session-resume-sample-items" class="slide level2 smaller">
 <h2>Session Resume &amp; Sample Items</h2>
 <h3 id="resume">Resume</h3>
