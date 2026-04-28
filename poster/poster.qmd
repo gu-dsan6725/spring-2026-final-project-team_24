@@ -11,47 +11,7 @@ format:
       - margin=0.55in
     pdf-engine: lualatex
     include-in-header:
-      - text: |
-          \usepackage{multicol}
-          \usepackage{xcolor}
-          \usepackage{graphicx}
-          \usepackage{titlesec}
-          \usepackage{enumitem}
-          \usepackage{parskip}
-          \usepackage{tabularx}
-          \usepackage{booktabs}
-          \usepackage{array}
-          \usepackage{tikz}
-          \usetikzlibrary{arrows.meta,positioning,calc}
-          \usepackage{qrcode}
-          \usepackage[scaled=0.92]{helvet}
-          \renewcommand{\familydefault}{\sfdefault}
-
-          \definecolor{ggblue}{HTML}{0B3061}
-          \definecolor{ggdeep}{HTML}{05203F}
-          \definecolor{gggold}{HTML}{8C6F2C}
-          \definecolor{soft}{HTML}{F1F5F9}
-          \definecolor{accent}{HTML}{1E3A8A}
-          \definecolor{ok}{HTML}{166534}
-          \definecolor{rowalt}{HTML}{F3F6FB}
-
-          \pagestyle{empty}
-          \setlength{\parindent}{0pt}
-          \setlength{\parskip}{0.45em}
-          \setlength{\columnsep}{0.42in}
-          \setlength{\columnseprule}{0.4pt}
-          \setlist[itemize]{leftmargin=1.3em,topsep=2pt,itemsep=3pt,parsep=0pt}
-          \setlist[enumerate]{leftmargin=1.5em,topsep=2pt,itemsep=3pt,parsep=0pt}
-
-          \titleformat{\section}
-            {\Huge\bfseries\color{ggblue}}
-            {}{0em}{}
-            [\vspace{-0.35em}{\color{ggblue}\rule{\linewidth}{1.2pt}}]
-          \titlespacing*{\section}{0pt}{0.6em}{0.4em}
-          \titleformat{\subsection}
-            {\LARGE\bfseries\color{accent}}
-            {}{0em}{}
-          \titlespacing*{\subsection}{0pt}{0.6em}{0.2em}
+      - file: preamble.tex
 ---
 
 \noindent
@@ -79,7 +39,7 @@ format:
 \end{minipage}
 
 \vspace{0.05in}
-{\color{ggblue}\rule{\linewidth}{2.4pt}}
+\textcolor{ggblue}{\rule{\linewidth}{2.4pt}}
 \vspace{0.08in}
 
 \begin{multicols}{4}
@@ -277,7 +237,7 @@ Raw notes stay in the vault. Cloud LLM and embedding calls are opt-in. The multi
 \end{multicols}
 
 \vspace{0.05in}
-{\color{ggblue}\rule{\linewidth}{1pt}}
+\textcolor{ggblue}{\rule{\linewidth}{1pt}}
 \vspace{0.05in}
 \begin{center}
 {\large\itshape Code, paper, slides, and tests:\;\texttt{github.com/gu-dsan6725/spring-2026-final-project-team\_24} \quad{\color{gggold}\textbf{|}}\quad DSAN 6725 --- Applied GenAI for AI Developers --- Spring 2026 \quad{\color{gggold}\textbf{|}}\quad Scan QR (top right) for repo, paper PDF, slide deck, and demo video}
