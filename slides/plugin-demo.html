@@ -367,6 +367,28 @@ DSAN 6725 Team
 <p>Instantly turns any paper into a study-ready knowledge graph.</p>
 </div></div>
 </section>
+<section id="section-graph-builder-link-architect" class="slide level2 smaller">
+<h2>Section Graph Builder (Link-Architect)</h2>
+<p>Yubo’s pipeline turns a MinerU-extracted paper into a typed directed graph that the depth-aware scheduler reads from. Adapted from his <code>karpathy_agents/</code> (<code>origin/yubo</code>) by keeping <strong>only</strong> the link-architect step.</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="pipeline">Pipeline</h3>
+<ol type="1">
+<li><code>MinerU</code> → markdown + assets</li>
+<li><code>section_splitter</code> → <code>Section</code> list (one per <code>##</code>)</li>
+<li><code>graph_builder.build_section_graph(sections)</code> — <strong>one LLM call per paper</strong> (<code>chat_json_completion</code>, JSON-mode)</li>
+<li>Tarjan SCC condenses cycles → topological layering</li>
+<li><code>(edges, depths)</code> written to <code>paper_index_service</code></li>
+</ol>
+</div><div class="column" style="width:50%;">
+<h3 id="outputs-graphresult">Outputs (<code>GraphResult</code>)</h3>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="" aria-hidden="true" tabindex="-1"></a>edges: <span class="bu">list</span>[GraphEdge]         <span class="co"># source, target, label, anchor</span></span>
+<span id="cb1-2"><a href="" aria-hidden="true" tabindex="-1"></a>depths: <span class="bu">dict</span>[section_id, <span class="bu">int</span>]  <span class="co"># 0 = root layer</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Edge labels: <code>depends_on</code>, <code>contrasts</code>, <code>generalizes</code>, <code>instantiates</code> (directionality: <em>source elaborates / depends on target</em>).</p>
+<p>Gracefully degrades — no LLM key returns <code>(edges=[], depths={s: 0})</code> so PDF ingest never breaks.</p>
+</div></div>
+<p><code>depths</code> feeds the scheduler’s <code>focus_depth</code> cursor; <code>edges</code> populate the generator’s foundation context.</p>
+</section>
 <section id="session-resume-sample-items" class="slide level2 smaller">
 <h2>Session Resume &amp; Sample Items</h2>
 <h3 id="resume">Resume</h3>
@@ -386,21 +408,76 @@ DSAN 6725 Team
 <section id="answer-grading" class="slide level2 smaller">
 <h2>Answer Grading</h2>
 <p>The plugin reads your answers from markdown callouts and grades them:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Your Answer</span></span>
-<span id="cb1-2"><a href="" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!quote</span><span class="co">]</span><span class="at">- Write your answer here</span></span>
-<span id="cb1-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; P(A</span><span class="pp">|</span><span class="at">B) = P(B</span><span class="pp">|</span><span class="at">A) * P(A) / P(B)</span></span>
-<span id="cb1-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Using the law of total probability for the denominator...</span></span>
-<span id="cb1-6"><a href="" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Evaluator Feedback  ← injected by plugin</span></span>
-<span id="cb1-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!success</span><span class="co">]</span><span class="at"> Score: 8.5/10</span></span>
-<span id="cb1-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Strong application of Bayes' theorem.</span></span>
-<span id="cb1-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Consider explicitly stating the partition used in the denominator.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb2-1"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Your Answer</span></span>
+<span id="cb2-2"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!quote</span><span class="co">]</span><span class="at">- Write your answer here</span></span>
+<span id="cb2-4"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; P(A</span><span class="pp">|</span><span class="at">B) = P(B</span><span class="pp">|</span><span class="at">A) * P(A) / P(B)</span></span>
+<span id="cb2-5"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Using the law of total probability for the denominator...</span></span>
+<span id="cb2-6"><a href="" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="" aria-hidden="true" tabindex="-1"></a><span class="fu">#### Evaluator Feedback  ← injected by plugin</span></span>
+<span id="cb2-8"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; </span><span class="co">[</span><span class="ot">!success</span><span class="co">]</span><span class="at"> Score: 8.5/10</span></span>
+<span id="cb2-9"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Strong application of Bayes' theorem.</span></span>
+<span id="cb2-10"><a href="" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Consider explicitly stating the partition used in the denominator.</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <ul>
 <li>LLM compares your answer against the reference solution</li>
 <li>Feedback injected directly into the note</li>
 <li>Scores visible before choosing next round difficulty</li>
 </ul>
+</section>
+<section id="offline-evaluation-harness-braintrust" class="slide level2 smaller">
+<h2>Offline Evaluation Harness (Braintrust)</h2>
+<p>Yubo’s <code>evals/item_generation/eval.py</code> ships alongside the code so any reviewer can re-run the pilot. <strong>Generation runs outside the Braintrust event loop</strong> to avoid nested <code>asyncio.run()</code> conflicts; <code>Eval()</code> only scores recorded outputs.</p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="scorer-families">Scorer families</h3>
+<ul>
+<li><strong>Gates</strong> — <code>NoRunError</code>, <code>FeasibilityAlign</code>, <code>ItemStructural</code>, <code>OutputNonEmpty</code></li>
+<li><strong>Heuristics</strong> <em>(<code>extra_metrics.py</code>)</em> — <code>FoundationCoverage</code>, <code>ProblemPromptShape</code>, <code>BodyLengthBand</code>, <code>AnswerLength</code>, <code>MarkdownStructure</code></li>
+<li><strong>Cost / latency</strong> — <code>ProxyTokenEfficiency</code> (tiktoken-based), wall-clock band score</li>
+<li><strong>LLM judges</strong> <em>(<code>llm_judge_scorers.py</code>, <code>autoevals.LLMClassifier</code>)</em> — <code>RubricSatisfaction</code>, <code>ItemClarity</code> with packed rubric blocks</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="pilot-n2-descriptive-only">Pilot (<span class="math inline">\(N=2\)</span>) — descriptive only</h3>
+<table class="caption-top">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Scorer</th>
+<th>Mean</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>NoRunError</code> / <code>FeasibilityAlign</code> / <code>OutputNonEmpty</code> / <code>FoundationCoverage</code> / <code>ProblemPromptShape</code> / <code>AnswerLength</code> / <code>BodyLengthBand</code> / <code>ProxyTokenEfficiency</code></td>
+<td><strong>100%</strong></td>
+</tr>
+<tr class="even">
+<td><code>RubricSatisfaction</code> (judge)</td>
+<td><strong>91%</strong></td>
+</tr>
+<tr class="odd">
+<td><code>Latency</code> (band)</td>
+<td><strong>87.5%</strong></td>
+</tr>
+<tr class="even">
+<td><code>ItemStructural</code></td>
+<td><strong>85%</strong></td>
+</tr>
+<tr class="odd">
+<td><code>ItemClarity</code> (judge)</td>
+<td>69%</td>
+</tr>
+<tr class="even">
+<td><code>MarkdownStructure</code></td>
+<td>46%</td>
+</tr>
+</tbody>
+</table>
+<p><code>--skip-llm-judges</code> and <code>--no-send-logs</code> flags for offline / sandboxed runs.</p>
+</div></div>
 </section>
 <section id="tech-stack" class="slide level2 smaller">
 <h2>Tech Stack</h2>
