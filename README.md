@@ -102,7 +102,7 @@ pytest -q
 | Slides | `slides/plugin-demo.qmd` | Draft included |
 | Poster (48" × 36") | `poster/` | Forthcoming |
 | Project website | `docs/` | Forthcoming |
-| Demo video / link | `docs/demo.md` | Forthcoming |
+| Demo video / link | [Google Drive demo video](https://drive.google.com/file/d/1rC7I-PicCNZHlSm8fZAtGI44Gt0ujdIh/view?usp=sharing) | Available |
 
 ## Team
 

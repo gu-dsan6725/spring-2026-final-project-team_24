@@ -24,3 +24,7 @@ quarto render
 
 Configure Pages to serve from the `gh-pages` branch (or `docs/` folder
 on `main`) once content is in place.
+
+## Demo Video
+
+- [Google Drive demo video](https://drive.google.com/file/d/1rC7I-PicCNZHlSm8fZAtGI44Gt0ujdIh/view?usp=sharing)
