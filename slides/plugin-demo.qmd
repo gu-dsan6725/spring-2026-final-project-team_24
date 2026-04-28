@@ -90,7 +90,7 @@ For difficulty ≥ **hard**, items go through up to 3 hardening iterations:
 
 ---
 
-## Five Difficulty Tiers
+## Five Difficulty Tiers {.smaller}
 
 ```{mermaid}
 %%| fig-width: 8
@@ -112,7 +112,7 @@ flowchart LR
 
 ---
 
-## Plugin UI — Context Images & PDF Upload
+## Plugin UI — Context Images & PDF Upload {.smaller}
 
 :::: {.columns}
 
@@ -146,7 +146,7 @@ Instantly turns any paper into a study-ready knowledge graph.
 
 ---
 
-## Plugin UI — Session Flow
+## Plugin UI — Session Flow {.smaller}
 
 ```{mermaid}
 %%| fig-width: 10
@@ -180,7 +180,7 @@ sequenceDiagram
 
 ---
 
-## Session Resume & Sample Items
+## Session Resume & Sample Items {.smaller}
 
 ### Resume
 - Session state lives in the **markdown note** (YAML frontmatter)
@@ -195,7 +195,7 @@ sequenceDiagram
 
 ---
 
-## Answer Grading
+## Answer Grading {.smaller}
 
 The plugin reads your answers from markdown callouts and grades them:
 
@@ -218,7 +218,7 @@ The plugin reads your answers from markdown callouts and grades them:
 
 ---
 
-## Cancel Generation
+## Cancel Generation {.smaller}
 
 Misclicks happen — the "Next Round" button has a safety toggle:
 
@@ -268,7 +268,7 @@ Enable the plugin in Obsidian Settings → Community Plugins.
 
 ---
 
-## Tech Stack
+## Tech Stack {.smaller}
 
 | Layer | Technology |
 |-------|-----------|
@@ -282,7 +282,7 @@ Enable the plugin in Obsidian Settings → Community Plugins.
 
 ---
 
-## What's Next
+## What's Next {.smaller}
 
 - **Concept CRUD** — full backend persistence (MongoDB)
 - **Embedding pipeline** — semantic search via Pinecone
