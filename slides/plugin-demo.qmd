@@ -184,19 +184,6 @@ The plugin reads your answers from markdown callouts and grades them:
 
 ---
 
-## Cancel Generation {.smaller}
-
-Misclicks happen — the "Next Round" button has a safety toggle:
-
-1. Click **"Next Round"** → button becomes **"Cancel Generation"**
-2. Click again → generation result is **discarded** client-side
-3. UI resets — no phantom items appended to your session note
-
-The backend request completes server-side (Obsidian API limitation),
-but the plugin ignores the response.
-
----
-
 ## Setup for Your Team {.smaller}
 
 ### 1. Clone & install backend
