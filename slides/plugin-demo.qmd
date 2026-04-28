@@ -155,7 +155,8 @@ Instantly turns any paper into a study-ready knowledge graph.
 
 1. `MinerU` → markdown + assets
 2. `section_splitter` → `Section` list (one per `##`)
-3. `graph_builder.build_section_graph(sections)` — **one LLM call per paper** (`chat_json_completion`, JSON-mode)
+3. `graph_builder.build_section_graph(...)`
+   — **one LLM call per paper** (JSON-mode `chat_json_completion`)
 4. Tarjan SCC condenses cycles → topological layering
 5. `(edges, depths)` written to `paper_index_service`
 :::
@@ -164,13 +165,14 @@ Instantly turns any paper into a study-ready knowledge graph.
 ### Outputs (`GraphResult`)
 
 ```python
-edges: list[GraphEdge]         # source, target, label, anchor
-depths: dict[section_id, int]  # 0 = root layer
+edges: list[GraphEdge]
+depths: dict[section_id, int]
 ```
 
-Edge labels: `depends_on`, `contrasts`, `generalizes`, `instantiates` (directionality: *source elaborates / depends on target*).
+Edge labels: `depends_on`, `contrasts`, `generalizes`, `instantiates`
+(*source elaborates / depends on target*).
 
-Gracefully degrades — no LLM key returns `(edges=[], depths={s: 0})` so PDF ingest never breaks.
+Gracefully degrades — no LLM key → `(edges=[], depths={s: 0})`.
 :::
 
 ::::
@@ -219,33 +221,20 @@ The plugin reads your answers from markdown callouts and grades them:
 
 ## Offline Evaluation Harness (Braintrust) {.smaller}
 
-:::: {.columns}
-
-::: {.column width="50%"}
 ### Scorer families
 
 - **Gates** — `NoRunError`, `FeasibilityAlign`, `ItemStructural`, `OutputNonEmpty`
 - **Heuristics** *(`extra_metrics.py`)* — `FoundationCoverage`, `ProblemPromptShape`, `BodyLengthBand`, `AnswerLength`, `MarkdownStructure`
 - **Cost / latency** — `ProxyTokenEfficiency` (tiktoken-based), wall-clock band score
 - **LLM judges** *(`llm_judge_scorers.py`, `autoevals.LLMClassifier`)* — `RubricSatisfaction`, `ItemClarity` with packed rubric blocks
-:::
-
-::: {.column width="50%"}
-### Pilot ($N=2$) — descriptive only
-
-| Scorer | Mean |
-|---|---|
-| 8 gate / heuristic / cost scorers | **100%** |
-| `RubricSatisfaction` (judge) | **91%** |
-| `Latency` (band) | **87.5%** |
-| `ItemStructural` | **85%** |
-| `ItemClarity` (judge) | 69% |
-| `MarkdownStructure` | 46% |
 
 `--skip-llm-judges` and `--no-send-logs` flags for offline / sandboxed runs.
-:::
 
-::::
+---
+
+## Pilot Quantitative Results ($N=2$) {.smaller}
+
+![](figures/pilot-results-table.png){fig-align="center" width="70%"}
 
 ---
 
