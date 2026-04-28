@@ -239,7 +239,7 @@ Yubo's `evals/item_generation/eval.py` ships alongside the code so any reviewer 
 
 | Scorer | Mean |
 |---|---|
-| `NoRunError` / `FeasibilityAlign` / `OutputNonEmpty` / `FoundationCoverage` / `ProblemPromptShape` / `AnswerLength` / `BodyLengthBand` / `ProxyTokenEfficiency` | **100%** |
+| 8 gate / heuristic / cost scorers | **100%** |
 | `RubricSatisfaction` (judge) | **91%** |
 | `Latency` (band) | **87.5%** |
 | `ItemStructural` | **85%** |
